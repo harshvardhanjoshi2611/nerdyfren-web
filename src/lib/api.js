@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 const developmentApiUrl = `${window.location.protocol}//${window.location.hostname}:3001/api/v1`;
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? developmentApiUrl : '/api/v1'),
+  baseURL: configuredApiUrl || (import.meta.env.DEV ? developmentApiUrl : '/api/v1'),
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -30,13 +31,25 @@ export function getApiError(error, fallback = 'Something went wrong. Please try 
   return error.response?.data?.error || (error.code === 'ECONNABORTED' ? 'The request timed out.' : fallback);
 }
 
+function expectArray(data, resource) {
+  if (!Array.isArray(data)) throw new Error(`Invalid ${resource} response from the API`);
+  return data;
+}
+
+function expectObject(data, resource) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`Invalid ${resource} response from the API`);
+  }
+  return data;
+}
+
 export const servicesApi = {
-  list: () => api.get('/services').then((r) => r.data),
+  list: () => api.get('/services').then((r) => expectArray(r.data, 'services')),
 };
 
 export const bookingsApi = {
-  create: (data) => api.post('/bookings', data).then((r) => r.data),
-  track: (token) => api.get(`/bookings/track/${encodeURIComponent(token)}`).then((r) => r.data),
+  create: (data) => api.post('/bookings', data).then((r) => expectObject(r.data, 'booking')),
+  track: (token) => api.get(`/bookings/track/${encodeURIComponent(token)}`).then((r) => expectObject(r.data, 'tracking')),
 };
 
 export const editorApi = {

@@ -4,11 +4,11 @@ import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import { useFetch } from '../hooks/useFetch';
 import { servicesApi } from '../lib/api';
-import { formatMoney, serviceMeta } from '../lib/format';
+import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
 
 export default function ServicesPage() {
   const { data: services, loading } = useFetch(servicesApi.list, []);
-  const cards = services || Object.keys(serviceMeta).map((id) => ({ id, amount: null }));
+  const cards = Array.isArray(services) ? services : fallbackServices;
   return (
     <div className="min-h-screen bg-canvas">
       <Navbar />

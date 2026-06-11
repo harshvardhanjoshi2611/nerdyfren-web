@@ -21,6 +21,13 @@ export const serviceMeta = {
   },
 };
 
+export const fallbackServices = [
+  { id: 'trend-hopper', amount: 1999 },
+  { id: 'video-reel', amount: 2999 },
+  { id: 'video-copy', amount: 3999 },
+  { id: 'podcast', amount: 4999 },
+];
+
 export const formatMoney = (amount = 0) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 

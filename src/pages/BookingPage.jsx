@@ -3,22 +3,34 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import { bookingsApi, getApiError, servicesApi } from '../lib/api';
-import { formatMoney, serviceMeta } from '../lib/format';
+import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [services, setServices] = useState([]);
+  const [services, setServices] = useState(fallbackServices);
   const [form, setForm] = useState({ client_name: '', client_email: '', client_phone: '', service_type: searchParams.get('service') || '', brief: '', referenceUrl: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let active = true;
     servicesApi.list().then((items) => {
+      if (!active) return;
       setServices(items);
-      if (!form.service_type && items[0]) setForm((current) => ({ ...current, service_type: items[0].id }));
-    }).catch(() => setError('Could not load live service pricing.'));
-  }, [form.service_type]);
+      setForm((current) => current.service_type || !items[0]
+        ? current
+        : { ...current, service_type: items[0].id });
+    }).catch(() => {
+      if (!active) return;
+      setServices(fallbackServices);
+      setError('Live pricing is temporarily unavailable. The booking form is still available, but submission requires the API connection.');
+      setForm((current) => current.service_type
+        ? current
+        : { ...current, service_type: fallbackServices[0].id });
+    });
+    return () => { active = false; };
+  }, []);
 
   const selected = services.find((item) => item.id === form.service_type);
   const update = (event) => {
