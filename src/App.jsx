@@ -14,6 +14,7 @@ import TrackingPage from './pages/TrackingPage';
 import UserAuthPage from './pages/UserAuthPage';
 import UserDashboard from './pages/UserDashboard';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 export default function App() {
   return (
@@ -39,6 +40,12 @@ export default function App() {
       <Route path="/admin/login" element={<LoginPage role="admin" />} />
       <Route element={<ProtectedRoute role="admin" />}>
         <Route path="/admin" element={<AdminDashboard />} />
+      </Route>
+      <Route path="/super-admin" element={<LoginPage role="super_admin" />} />
+      <Route path="/superadmin" element={<LoginPage role="super_admin" />} />
+      <Route element={<ProtectedRoute role="super_admin" />}>
+        <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
       </Routes>

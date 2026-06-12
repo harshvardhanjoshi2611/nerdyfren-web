@@ -15,6 +15,7 @@ const apiOrigin = normalizeApiOrigin(import.meta.env.VITE_API_URL)
 
 export const API_ENDPOINTS = Object.freeze({
   services: `${API_PREFIX}/services`,
+  siteContent: `${API_PREFIX}/site-content`,
   bookings: `${API_PREFIX}/bookings`,
   bookingTracking: (token) => `${API_PREFIX}/bookings/track/${encodeURIComponent(token)}`,
   applications: `${API_PREFIX}/applications`,
@@ -43,6 +44,18 @@ export const API_ENDPOINTS = Object.freeze({
   adminApplicationApproval: (id) => `${API_PREFIX}/admin/applications/${id}/approve`,
   adminApplicationRejection: (id) => `${API_PREFIX}/admin/applications/${id}/reject`,
   adminEditorDeactivation: (id) => `${API_PREFIX}/admin/editors/${id}/deactivate`,
+  superAdminLogin: `${API_PREFIX}/super-admin/login`,
+  superAdminCms: `${API_PREFIX}/super-admin/cms`,
+  superAdminSetting: (key) => `${API_PREFIX}/super-admin/settings/${key}`,
+  superAdminHomepage: (key) => `${API_PREFIX}/super-admin/homepage/${key}`,
+  superAdminContent: (type, key) => `${API_PREFIX}/super-admin/content/${type}/${key}`,
+  superAdminSocial: (key) => `${API_PREFIX}/super-admin/social/${key}`,
+  superAdminFooterLinks: `${API_PREFIX}/super-admin/footer-links`,
+  superAdminFooterLink: (id) => `${API_PREFIX}/super-admin/footer-links/${id}`,
+  superAdminAdmins: `${API_PREFIX}/super-admin/admins`,
+  superAdminAdmin: (id) => `${API_PREFIX}/super-admin/admins/${id}`,
+  superAdminEditors: `${API_PREFIX}/super-admin/editors`,
+  superAdminEditor: (id) => `${API_PREFIX}/super-admin/editors/${id}`,
 });
 
 export const api = axios.create({
@@ -56,14 +69,20 @@ api.interceptors.request.use((config) => {
     || config.url === API_ENDPOINTS.authLogout
     || config.url === API_ENDPOINTS.authMe
     || config.url?.startsWith(`${API_PREFIX}/user`);
-  const area = config.url?.startsWith(`${API_PREFIX}/admin`)
+  const area = config.url?.startsWith(`${API_PREFIX}/super-admin`)
+    ? 'super_admin'
+    : config.url?.startsWith(`${API_PREFIX}/admin`)
     ? 'admin'
     : config.url?.startsWith(`${API_PREFIX}/editor`)
       ? 'editor'
       : isUserRequest
         ? 'user'
         : null;
-  const token = area ? localStorage.getItem(`nerdyfren_${area}_token`) : null;
+  const token = area === 'admin'
+    ? localStorage.getItem('nerdyfren_admin_token') || localStorage.getItem('nerdyfren_super_admin_token')
+    : area
+      ? localStorage.getItem(`nerdyfren_${area}_token`)
+      : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -73,6 +92,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) localStorage.removeItem('nerdyfren_admin_token');
+      if (error.config?.url?.startsWith(`${API_PREFIX}/super-admin`)) localStorage.removeItem('nerdyfren_super_admin_token');
       if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) localStorage.removeItem('nerdyfren_editor_token');
       if (
         error.config?.url === API_ENDPOINTS.authLogout
@@ -102,6 +122,10 @@ function expectObject(data, resource) {
 
 export const servicesApi = {
   list: () => api.get(API_ENDPOINTS.services).then((r) => expectArray(r.data, 'services')),
+};
+
+export const siteContentApi = {
+  get: () => api.get(API_ENDPOINTS.siteContent).then((r) => expectObject(r.data, 'site content')),
 };
 
 export const bookingsApi = {
@@ -148,4 +172,20 @@ export const adminApi = {
   approve: (id, data) => api.post(API_ENDPOINTS.adminApplicationApproval(id), data).then((r) => r.data),
   reject: (id, notes) => api.post(API_ENDPOINTS.adminApplicationRejection(id), { notes }).then((r) => r.data),
   deactivate: (id) => api.patch(API_ENDPOINTS.adminEditorDeactivation(id)).then((r) => r.data),
+};
+
+export const superAdminApi = {
+  login: (data) => api.post(API_ENDPOINTS.superAdminLogin, data).then((r) => r.data),
+  cms: () => api.get(API_ENDPOINTS.superAdminCms).then((r) => r.data),
+  updateSetting: (key, value) => api.put(API_ENDPOINTS.superAdminSetting(key), { value }).then((r) => r.data),
+  updateHomepage: (key, data) => api.put(API_ENDPOINTS.superAdminHomepage(key), data).then((r) => r.data),
+  upsertContent: (type, key, data) => api.put(API_ENDPOINTS.superAdminContent(type, key), data).then((r) => r.data),
+  deleteContent: (type, key) => api.delete(API_ENDPOINTS.superAdminContent(type, key)).then((r) => r.data),
+  updateSocial: (key, data) => api.put(API_ENDPOINTS.superAdminSocial(key), data).then((r) => r.data),
+  upsertFooterLink: (data) => api.put(API_ENDPOINTS.superAdminFooterLinks, data).then((r) => r.data),
+  deleteFooterLink: (id) => api.delete(API_ENDPOINTS.superAdminFooterLink(id)).then((r) => r.data),
+  createAdmin: (data) => api.post(API_ENDPOINTS.superAdminAdmins, data).then((r) => r.data),
+  updateAdmin: (id, isActive) => api.patch(API_ENDPOINTS.superAdminAdmin(id), { is_active: isActive }).then((r) => r.data),
+  createEditor: (data) => api.post(API_ENDPOINTS.superAdminEditors, data).then((r) => r.data),
+  updateEditor: (id, isActive) => api.patch(API_ENDPOINTS.superAdminEditor(id), { is_active: isActive }).then((r) => r.data),
 };

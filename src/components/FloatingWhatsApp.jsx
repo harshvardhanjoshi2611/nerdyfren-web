@@ -1,5 +1,6 @@
 import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import useSiteContent from '../hooks/useSiteContent';
 
 const visiblePaths = new Set([
   '/',
@@ -12,9 +13,10 @@ const visiblePaths = new Set([
 
 export default function FloatingWhatsApp() {
   const { pathname } = useLocation();
+  const { content } = useSiteContent();
   if (!visiblePaths.has(pathname)) return null;
 
-  const number = (import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
+  const number = (content?.settings?.whatsapp_number || '').replace(/\D/g, '');
   const message = encodeURIComponent('Hi NerdyFren, I would like to talk to a coordinator.');
   const href = number ? `https://wa.me/${number}?text=${message}` : 'https://wa.me/';
 
