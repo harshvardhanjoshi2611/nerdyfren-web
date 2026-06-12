@@ -37,7 +37,7 @@ npm run dev
 Set the backend API URL in `.env`:
 
 ```env
-VITE_API_URL=http://localhost:3001/api/v1
+VITE_API_URL=http://localhost:3001
 ```
 
 The backend must include the frontend origin in `ALLOWED_ORIGINS`:
@@ -65,7 +65,7 @@ npm run preview
 5. Add `VITE_API_URL` with the public Railway backend URL:
 
 ```env
-VITE_API_URL=https://your-api.up.railway.app/api/v1
+VITE_API_URL=https://your-api.up.railway.app
 ```
 
 6. Deploy.
@@ -97,6 +97,8 @@ The Axios client lives in `src/lib/api.js`. Authentication tokens are stored sep
 - `nerdyfren_admin_token`
 
 The frontend never sends service prices or payment claims during booking creation. Prices are loaded from the backend, and payments are confirmed only from the protected admin dashboard.
+
+`VITE_API_URL` is the backend origin. The centralized client appends `/api/v1` to every endpoint. For backward compatibility, a value that already ends in `/api/v1` is normalized and also works.
 
 ## Folder Structure
 
