@@ -77,7 +77,7 @@ export default function UserDashboard() {
           ))}
         </div>
 
-        <section className="mt-10">
+        <section id="bookings" className="mt-10 scroll-mt-8">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-lg font-semibold">My bookings</h2>
             <span className="text-xs text-slate-600">{bookings.length} total</span>

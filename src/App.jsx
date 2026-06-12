@@ -13,10 +13,12 @@ import ServicesPage from './pages/ServicesPage';
 import TrackingPage from './pages/TrackingPage';
 import UserAuthPage from './pages/UserAuthPage';
 import UserDashboard from './pages/UserDashboard';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/book" element={<BookingPage />} />
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboard />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+      </Routes>
+      <FloatingWhatsApp />
+    </>
   );
 }

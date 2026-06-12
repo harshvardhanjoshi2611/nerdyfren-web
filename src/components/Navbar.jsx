@@ -9,8 +9,7 @@ export default function Navbar() {
   const { isAuthenticated, endSession } = useAuth();
   const links = [
     ['Services', '/services'],
-    ['Track order', isAuthenticated ? '/dashboard' : '/track'],
-    ['For editors', '/editor/signin'],
+    ...(!isAuthenticated ? [['Track order', '/track']] : []),
   ];
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-canvas/75 backdrop-blur-xl">
@@ -27,6 +26,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className="btn-secondary !px-4 !py-2.5">Dashboard</Link>
+              <Link to="/dashboard#bookings" className="px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white">Track Project</Link>
               <button onClick={endSession} className="rounded-lg p-2.5 text-slate-500 hover:text-white" aria-label="Sign out"><LogOut size={17} /></button>
             </>
           ) : (
@@ -48,6 +48,7 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <Link to="/dashboard" onClick={() => setOpen(false)} className="text-sm text-slate-300">Dashboard</Link>
+                <Link to="/dashboard#bookings" onClick={() => setOpen(false)} className="text-sm text-slate-300">Track Project</Link>
                 <button onClick={() => { endSession(); setOpen(false); }} className="text-left text-sm text-slate-300">Sign out</button>
               </>
             ) : (

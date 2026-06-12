@@ -14,7 +14,10 @@ export default function Footer() {
         <div className="flex flex-wrap gap-5 text-sm text-slate-500">
           <Link to="/services" className="hover:text-white">Services</Link>
           <Link to={isAuthenticated ? '/dashboard' : '/track'} className="hover:text-white">Track order</Link>
-          <Link to="/editor/signin" className="hover:text-white">Editor portal</Link>
+          <Link to="/editor/signin" className="hover:text-white">Login as Nerd</Link>
+          <a href="https://allboutcommunication.com" target="_blank" rel="noreferrer" className="hover:text-white">Our Mothership</a>
+          <a href={import.meta.env.VITE_MERCH_URL || 'https://allboutcommunication.com'} target="_blank" rel="noreferrer" className="hover:text-white">Nerd Merchandise</a>
+          <a href={import.meta.env.VITE_INSTAGRAM_URL || 'https://www.instagram.com/nerdyfren/'} target="_blank" rel="noreferrer" className="hover:text-white">Instagram</a>
           <Link to="/admin/login" className="hover:text-white">Admin</Link>
         </div>
       </div>

@@ -1,12 +1,15 @@
-import { ArrowRight, BadgeCheck, Clock3, Play, Sparkles, WandSparkles, Zap } from 'lucide-react';
+import { ArrowRight, BadgeCheck, CheckCircle2, Clock3, Film, MessageSquareText, Play, Send, Sparkles, Upload, UserRoundCheck, WandSparkles, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
 const steps = [
-  ['01', 'Share the brief', 'Tell us the format, goal and references. Five thoughtful minutes is enough.'],
-  ['02', 'We build your crew', 'A founder-led match with a vetted specialist who fits your content style.'],
-  ['03', 'Ship with confidence', 'Track progress clearly, review the work and keep your publishing rhythm intact.'],
+  [Send, '01', 'Start Project', 'Choose your service and tell us what you are creating.'],
+  [Upload, '02', 'Share Brief & Raw Footage', 'Send the context, source files, references, and goals your Nerd needs.'],
+  [UserRoundCheck, '03', 'Nerd Assigned', 'We match your project with a real editor who understands the format.'],
+  [Film, '04', 'Draft Delivered', 'Your first polished cut arrives through your private project workspace.'],
+  [MessageSquareText, '05', 'Feedback Rounds', 'Share clear revision notes and follow every updated delivery.'],
+  [CheckCircle2, '06', 'Final Ready-To-Post Content', 'Receive the finished content, approved and ready for your feed.'],
 ];
 
 const signals = [
@@ -82,11 +85,23 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="relative overflow-hidden py-24">
+          <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/10 blur-[90px]" />
+          <div className="container-shell relative">
+            <div className="panel mx-auto max-w-4xl overflow-hidden p-8 text-center sm:p-12">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-pink-400/20 bg-gradient-to-br from-violet-500/15 to-cyan-500/10 text-pink-300"><UserRoundCheck size={27} /></div>
+              <span className="eyebrow mt-6">People, not prompts</span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">100% Human Editors</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">No AI shortcuts. Real Nerds edit your content with taste, context, and creator instinct.</p>
+            </div>
+          </div>
+        </section>
+
         <section className="py-28">
           <div className="container-shell">
-            <div className="mx-auto max-w-2xl text-center"><span className="eyebrow">Simple by design</span><h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">From idea to upload, without the chaos.</h2><p className="mt-5 text-slate-400">A managed workflow that gives you specialist quality without becoming a project manager.</p></div>
-            <div className="mt-16 grid gap-5 md:grid-cols-3">
-              {steps.map(([number, title, body]) => <div key={number} className="panel p-7"><span className="font-mono text-xs text-violet-400">{number}</span><h3 className="mt-8 text-lg font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{body}</p></div>)}
+            <div className="mx-auto max-w-2xl text-center"><span className="eyebrow">How It Works</span><h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">From raw footage to ready to post.</h2><p className="mt-5 text-slate-400">Your Nerdy Fren turns raw footage into ready-to-post content.</p></div>
+            <div className="mt-16 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {steps.map(([Icon, number, title, body]) => <div key={number} className="panel group p-7 transition hover:border-cyan-400/20"><div className="flex items-center justify-between"><span className="font-mono text-xs text-violet-400">{number}</span><span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500/15 to-cyan-500/10 text-cyan-300"><Icon size={18} /></span></div><h3 className="mt-8 text-lg font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{body}</p></div>)}
             </div>
           </div>
         </section>
