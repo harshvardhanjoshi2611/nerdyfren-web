@@ -1,20 +1,27 @@
 import { ArrowRight, Check, Circle, Search, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import { bookingsApi, getApiError } from '../lib/api';
 import { formatDate, formatMoney, humanize, serviceMeta } from '../lib/format';
+import useAuth from '../hooks/useAuth';
 
 const stages = ['unassigned', 'assigned', 'in_progress', 'revision', 'delivered'];
 
 export default function TrackingPage() {
   const [params, setParams] = useSearchParams();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const requestedToken = params.get('token');
   const [token, setToken] = useState(params.get('token') || '');
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (!authLoading && isAuthenticated && !requestedToken) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const track = async (event) => {
     event?.preventDefault();

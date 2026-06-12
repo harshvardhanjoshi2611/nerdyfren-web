@@ -4,11 +4,14 @@ import { Link, NavLink } from 'react-router-dom';
 import Logo from './Logo';
 import useAuth from '../hooks/useAuth';
 
-const links = [['Services', '/services'], ['Track order', '/track'], ['For editors', '/editor/login']];
-
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { isAuthenticated, endSession } = useAuth();
+  const links = [
+    ['Services', '/services'],
+    ['Track order', isAuthenticated ? '/dashboard' : '/track'],
+    ['For editors', '/editor/login'],
+  ];
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-canvas/75 backdrop-blur-xl">
       <div className="container-shell flex h-16 items-center justify-between">
