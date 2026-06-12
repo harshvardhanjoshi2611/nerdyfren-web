@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import UserProtectedRoute from './components/UserProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import BookingPage from './pages/BookingPage';
 import BookingSuccessPage from './pages/BookingSuccessPage';
@@ -10,6 +11,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import ServicesPage from './pages/ServicesPage';
 import TrackingPage from './pages/TrackingPage';
+import UserAuthPage from './pages/UserAuthPage';
+import UserDashboard from './pages/UserDashboard';
 
 export default function App() {
   return (
@@ -19,6 +22,11 @@ export default function App() {
       <Route path="/book" element={<BookingPage />} />
       <Route path="/booking/success" element={<BookingSuccessPage />} />
       <Route path="/track" element={<TrackingPage />} />
+      <Route path="/signin" element={<UserAuthPage mode="signin" />} />
+      <Route path="/signup" element={<UserAuthPage mode="signup" />} />
+      <Route element={<UserProtectedRoute />}>
+        <Route path="/dashboard" element={<UserDashboard />} />
+      </Route>
       <Route path="/editor/login" element={<LoginPage role="editor" />} />
       <Route element={<ProtectedRoute role="editor" />}>
         <Route path="/editor" element={<EditorDashboard />} />

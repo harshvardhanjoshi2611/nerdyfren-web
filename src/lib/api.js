@@ -18,6 +18,12 @@ export const API_ENDPOINTS = Object.freeze({
   bookings: `${API_PREFIX}/bookings`,
   bookingTracking: (token) => `${API_PREFIX}/bookings/track/${encodeURIComponent(token)}`,
   applications: `${API_PREFIX}/applications`,
+  authSignup: `${API_PREFIX}/auth/signup`,
+  authLogin: `${API_PREFIX}/auth/login`,
+  authLogout: `${API_PREFIX}/auth/logout`,
+  authMe: `${API_PREFIX}/auth/me`,
+  userBookings: `${API_PREFIX}/user/bookings`,
+  userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
   adminLogin: `${API_PREFIX}/admin/login`,
   editorLogin: `${API_PREFIX}/editors/login`,
   editorProfile: `${API_PREFIX}/editors/me`,
@@ -42,11 +48,17 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  const isUserRequest = config.url === API_ENDPOINTS.bookings
+    || config.url === API_ENDPOINTS.authLogout
+    || config.url === API_ENDPOINTS.authMe
+    || config.url?.startsWith(`${API_PREFIX}/user`);
   const area = config.url?.startsWith(`${API_PREFIX}/admin`)
     ? 'admin'
     : config.url?.startsWith(`${API_PREFIX}/editors`)
       ? 'editor'
-      : null;
+      : isUserRequest
+        ? 'user'
+        : null;
   const token = area ? localStorage.getItem(`nerdyfren_${area}_token`) : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -58,6 +70,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) localStorage.removeItem('nerdyfren_admin_token');
       if (error.config?.url?.startsWith(`${API_PREFIX}/editors`)) localStorage.removeItem('nerdyfren_editor_token');
+      if (
+        error.config?.url === API_ENDPOINTS.authLogout
+        || error.config?.url === API_ENDPOINTS.authMe
+        || error.config?.url?.startsWith(`${API_PREFIX}/user`)
+      ) localStorage.removeItem('nerdyfren_user_token');
     }
     return Promise.reject(error);
   },
@@ -90,6 +107,18 @@ export const bookingsApi = {
 
 export const applicationsApi = {
   create: (data) => api.post(API_ENDPOINTS.applications, data).then((r) => expectObject(r.data, 'application')),
+};
+
+export const authApi = {
+  signup: (data) => api.post(API_ENDPOINTS.authSignup, data).then((r) => expectObject(r.data, 'signup')),
+  login: (data) => api.post(API_ENDPOINTS.authLogin, data).then((r) => expectObject(r.data, 'login')),
+  logout: () => api.post(API_ENDPOINTS.authLogout).then((r) => r.data),
+  me: () => api.get(API_ENDPOINTS.authMe).then((r) => expectObject(r.data, 'profile')),
+};
+
+export const userApi = {
+  bookings: () => api.get(API_ENDPOINTS.userBookings).then((r) => expectObject(r.data, 'bookings')),
+  booking: (id) => api.get(API_ENDPOINTS.userBooking(id)).then((r) => expectObject(r.data, 'booking')),
 };
 
 export const editorApi = {

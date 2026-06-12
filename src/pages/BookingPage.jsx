@@ -4,10 +4,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import { bookingsApi, getApiError, servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
+import useAuth from '../hooks/useAuth';
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [services, setServices] = useState(fallbackServices);
   const [form, setForm] = useState({ client_name: '', client_email: '', client_phone: '', service_type: searchParams.get('service') || '', brief: '', referenceUrl: '' });
   const [error, setError] = useState('');
@@ -31,6 +33,16 @@ export default function BookingPage() {
     });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    setForm((current) => ({
+      ...current,
+      client_name: current.client_name || user.name || '',
+      client_email: current.client_email || user.email || '',
+      client_phone: current.client_phone || user.mobile || '',
+    }));
+  }, [user]);
 
   const selected = services.find((item) => item.id === form.service_type);
   const update = (event) => {
