@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, CreditCard, ExternalLink, FolderKanban, LoaderCircle, LogOut, Plus, RotateCcw } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ExternalLink, FolderKanban, LoaderCircle, LogOut, Plus, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from '../components/PageState';
 import StatusBadge from '../components/StatusBadge';
 import useAuth from '../hooks/useAuth';
 import { getApiError, userApi } from '../lib/api';
-import { formatDate, formatMoney, serviceMeta } from '../lib/format';
+import { formatDate, getProjectName, serviceMeta } from '../lib/format';
 
 export default function UserDashboard() {
   const { user, endSession } = useAuth();
@@ -15,6 +15,9 @@ export default function UserDashboard() {
   const [error, setError] = useState('');
   const [revision, setRevision] = useState({ bookingId: null, message: '' });
   const [revisionBusy, setRevisionBusy] = useState(false);
+  const sortedBookings = [...bookings].sort(
+    (first, second) => new Date(second.created_at || 0) - new Date(first.created_at || 0),
+  );
 
   const loadBookings = () => {
     setLoading(true);
@@ -56,7 +59,7 @@ export default function UserDashboard() {
       <main className="container-shell py-10 sm:py-14">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <span className="eyebrow">Creator dashboard</span>
+            <span className="eyebrow">User Dashboard</span>
             <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">Good to see you, {user?.name?.split(' ')[0]}.</h1>
             <p className="mt-2 text-sm text-slate-500">Every account-owned project and its private tracking link.</p>
           </div>
@@ -66,8 +69,8 @@ export default function UserDashboard() {
         <div className="mt-9 grid gap-4 sm:grid-cols-3">
           {[
             [FolderKanban, 'Total projects', bookings.length],
-            [CreditCard, 'Paid', bookings.filter((item) => item.payment_status === 'paid').length],
             [CalendarDays, 'In progress', bookings.filter((item) => ['assigned', 'work_in_progress', 'awaiting_revision'].includes(item.status)).length],
+            [CheckCircle2, 'Completed', bookings.filter((item) => item.status === 'completed').length],
           ].map(([Icon, label, value]) => (
             <div key={label} className="panel p-5">
               <Icon className="text-violet-300" size={19} />
@@ -94,24 +97,15 @@ export default function UserDashboard() {
           )}
           {!loading && !error && bookings.length > 0 && (
             <div className="space-y-4">
-              {bookings.map((booking) => (
+              {sortedBookings.map((booking) => (
                 <article key={booking.id} className="panel p-5 sm:p-6">
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold">{serviceMeta[booking.service_type]?.name || booking.service_type}</h3>
-                        <StatusBadge status={booking.status} />
-                        <StatusBadge status={booking.payment_status} />
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
-                        <span>{booking.booking_ref}</span>
-                        <span>{formatDate(booking.created_at)}</span>
-                        <span>{formatMoney(booking.amount)}</span>
-                      </div>
+                    <div className="grid flex-1 gap-4 sm:grid-cols-4">
+                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Project Name</p><Link to={`/track?token=${encodeURIComponent(booking.tracking_token)}`} className="mt-2 block font-semibold text-white hover:text-violet-300">{getProjectName(booking)}</Link></div>
+                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Service</p><p className="mt-2 text-sm text-slate-300">{serviceMeta[booking.service_type]?.name || booking.service_type}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
+                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Date Created</p><p className="mt-2 text-sm text-slate-300">{formatDate(booking.created_at)}</p></div>
                     </div>
-                    <Link to={`/track?token=${encodeURIComponent(booking.tracking_token)}`} className="btn-secondary !px-4 !py-2.5">
-                      Open tracking <ArrowUpRight size={15} />
-                    </Link>
                   </div>
                   {booking.delivery && (
                     <div className="mt-5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">

@@ -35,3 +35,8 @@ export const formatDate = (date) =>
   date ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date)) : '-';
 
 export const humanize = (value = '') => value.replaceAll('_', ' ');
+
+export const getProjectName = (booking = {}) => {
+  const serviceName = serviceMeta[booking.service_type]?.name || humanize(booking.service_type);
+  return booking.project_name || booking.title || `${serviceName || 'Content'} Project`;
+};
