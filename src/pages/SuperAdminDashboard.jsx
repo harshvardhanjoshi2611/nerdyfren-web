@@ -1,4 +1,4 @@
-import { FileText, Gauge, Image, LayoutPanelTop, Link2, MessageCircleQuestion, Search, Settings, Share2, Users } from 'lucide-react';
+import { FileText, Gauge, Image, LayoutPanelTop, Link2, MessageCircleQuestion, Search, Settings, Share2, Star, Users, Video } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
@@ -6,10 +6,14 @@ import { ErrorState, LoadingState } from '../components/PageState';
 import { useFetch } from '../hooks/useFetch';
 import useSiteContent from '../hooks/useSiteContent';
 import { getApiError, superAdminApi } from '../lib/api';
+import CmsEditors from '../components/CmsEditors';
 
 const tabs = [
   ['Site Settings', Settings],
   ['Homepage CMS', LayoutPanelTop],
+  ['Media Library', Video],
+  ['Portfolio CMS', Image],
+  ['Testimonials CMS', Star],
   ['Services CMS', Gauge],
   ['FAQs CMS', MessageCircleQuestion],
   ['Banners CMS', Image],
@@ -57,7 +61,10 @@ export default function SuperAdminDashboard() {
           <div className="mt-6">
             {tab === 'Site Settings' && <SettingsEditor settings={data.settings} busy={busy} save={save} />}
             {tab === 'Homepage CMS' && <HomepageEditor homepage={data.homepage} busy={busy} save={save} />}
-            {tab === 'Services CMS' && <JsonContentEditor type="service" items={data.services} busy={busy} save={save} />}
+            {tab === 'Media Library' && <CmsEditors type="media" items={data.media} busy={busy} save={save} />}
+            {tab === 'Portfolio CMS' && <CmsEditors type="portfolio" items={data.portfolio} busy={busy} save={save} />}
+            {tab === 'Testimonials CMS' && <CmsEditors type="testimonial" items={data.testimonials} busy={busy} save={save} />}
+            {tab === 'Services CMS' && <CmsEditors type="service" items={data.services} busy={busy} save={save} />}
             {tab === 'FAQs CMS' && <StructuredContentEditor type="faq" items={data.faqs} fields={['question', 'answer']} busy={busy} save={save} />}
             {tab === 'Banners CMS' && <StructuredContentEditor type="banner" items={data.banners} fields={['title', 'subtitle', 'button_text', 'button_url']} busy={busy} save={save} />}
             {tab === 'Footer CMS' && <FooterEditor items={data.footer_links} busy={busy} save={save} />}
@@ -95,6 +102,7 @@ function HomepageSection({ sectionKey, section, busy, save }) {
   const [stepsText, setStepsText] = useState(content.steps ? JSON.stringify(content.steps, null, 2) : '');
   const [stepsInvalid, setStepsInvalid] = useState(false);
   const simpleFields = Object.keys(content).filter((key) => typeof content[key] === 'string');
+  const booleanFields = Object.keys(content).filter((key) => typeof content[key] === 'boolean');
   const submit = () => {
     let next = value;
     if (content.steps) {
@@ -108,7 +116,7 @@ function HomepageSection({ sectionKey, section, busy, save }) {
     }
     save(() => superAdminApi.updateHomepage(sectionKey, { content: next, is_active: active !== false, display_order: order || 0 }));
   };
-  return <div className="panel p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold capitalize">{sectionKey.replaceAll('_', ' ')}</h2><span className="text-xs text-slate-600">Database section</span></div><div className="mt-5 grid gap-4 md:grid-cols-2">{simpleFields.map((field) => <label key={field} className={field === 'subtitle' ? 'md:col-span-2' : ''}><span className="label capitalize">{field.replaceAll('_', ' ')}</span><textarea className="input min-h-20" value={value[field]} onChange={(event) => setValue({ ...value, [field]: event.target.value })} /></label>)}</div>{content.steps && <label className="mt-4 block"><span className="label">How It Works steps (JSON)</span><textarea className="input min-h-44 font-mono text-xs" value={stepsText} onChange={(event) => setStepsText(event.target.value)} />{stepsInvalid && <span className="mt-2 block text-xs text-red-300">Enter valid JSON before saving.</span>}</label>}<button disabled={busy} onClick={submit} className="btn-primary mt-5">Save section</button></div>;
+  return <div className="panel p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold capitalize">{sectionKey.replaceAll('_', ' ')}</h2><span className="text-xs text-slate-600">Database section</span></div><div className="mt-5 grid gap-4 md:grid-cols-2">{simpleFields.map((field) => <label key={field} className={field === 'subtitle' ? 'md:col-span-2' : ''}><span className="label capitalize">{field.replaceAll('_', ' ')}</span><textarea className="input min-h-20" value={value[field]} onChange={(event) => setValue({ ...value, [field]: event.target.value })} /></label>)}{booleanFields.map((field) => <label key={field} className="flex items-center gap-2 rounded-xl border border-white/10 p-4 text-sm text-slate-300"><input type="checkbox" checked={value[field]} onChange={(event) => setValue({ ...value, [field]: event.target.checked })} />{field.replaceAll('_', ' ')}</label>)}</div>{content.steps && <label className="mt-4 block"><span className="label">How It Works steps (JSON)</span><textarea className="input min-h-44 font-mono text-xs" value={stepsText} onChange={(event) => setStepsText(event.target.value)} />{stepsInvalid && <span className="mt-2 block text-xs text-red-300">Enter valid JSON before saving.</span>}</label>}<button disabled={busy} onClick={submit} className="btn-primary mt-5">Save section</button></div>;
 }
 
 function StructuredContentEditor({ type, items, fields, busy, save }) {
@@ -121,26 +129,6 @@ function ContentCard({ type, item, fields, busy, save }) {
   const [content, setContent] = useState(item.content);
   const [active, setActive] = useState(Boolean(item.is_active));
   return <div className="panel p-6"><div className="flex items-center justify-between"><h3 className="font-semibold">{item.content_key}</h3><label className="text-xs text-slate-500"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} className="mr-2" />Active</label></div><div className="mt-4 grid gap-4 md:grid-cols-2">{fields.map((field) => <label key={field}><span className="label capitalize">{field.replaceAll('_', ' ')}</span><textarea className="input min-h-20" value={content[field] || ''} onChange={(event) => setContent({ ...content, [field]: event.target.value })} /></label>)}</div><div className="mt-4 flex gap-2"><button disabled={busy} onClick={() => save(() => superAdminApi.upsertContent(type, item.content_key, { content, is_active: active, display_order: item.display_order }))} className="btn-primary">Save</button><button disabled={busy} onClick={() => save(() => superAdminApi.deleteContent(type, item.content_key), `${type} deleted.`)} className="btn-secondary text-red-300">Delete</button></div></div>;
-}
-
-function JsonContentEditor({ type, items, busy, save }) {
-  return <div className="space-y-4">{items.map((item) => <JsonCard key={item.content_key} type={type} item={item} busy={busy} save={save} />)}</div>;
-}
-
-function JsonCard({ type, item, busy, save }) {
-  const [text, setText] = useState(JSON.stringify(item.content, null, 2));
-  const [active, setActive] = useState(Boolean(item.is_active));
-  const [invalid, setInvalid] = useState(false);
-  const submit = () => {
-    try {
-      const content = JSON.parse(text);
-      setInvalid(false);
-      save(() => superAdminApi.upsertContent(type, item.content_key, { content, is_active: active, display_order: item.display_order }), 'Service saved.');
-    } catch {
-      setInvalid(true);
-    }
-  };
-  return <div className="panel p-6"><div className="flex items-center justify-between"><h3 className="font-semibold">{item.content.name || item.content_key}</h3><label className="text-xs text-slate-500"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} className="mr-2" />Active</label></div><textarea className="input mt-4 min-h-72 font-mono text-xs" value={text} onChange={(event) => setText(event.target.value)} />{invalid && <p className="mt-2 text-xs text-red-300">Enter valid JSON before saving.</p>}<button disabled={busy} onClick={submit} className="btn-primary mt-4">Save service and pricing</button></div>;
 }
 
 function FooterEditor({ items, busy, save }) {
