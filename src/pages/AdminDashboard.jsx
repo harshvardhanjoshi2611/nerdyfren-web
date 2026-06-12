@@ -1,4 +1,4 @@
-import { BadgeIndianRupee, BriefcaseBusiness, Check, CircleUserRound, LayoutDashboard, LoaderCircle, RefreshCw, UserRoundCheck, UsersRound, X } from 'lucide-react';
+import { BadgeIndianRupee, BriefcaseBusiness, Check, CircleUserRound, ExternalLink, LayoutDashboard, LoaderCircle, RefreshCw, UserRoundCheck, UsersRound, X } from 'lucide-react';
 import { useState } from 'react';
 import DashboardShell from '../components/DashboardShell';
 import { ErrorState, LoadingState } from '../components/PageState';
@@ -22,7 +22,13 @@ export default function AdminDashboard() {
 
   const action = async (key, work, success) => {
     setBusy(key); setNotice('');
-    try { await work(); setNotice(success); setModal(null); await reload(); }
+    try {
+      const result = await work();
+      setNotice(typeof success === 'function' ? success(result) : success);
+      setModal(null);
+      await reload();
+      return result;
+    }
     catch (requestError) { setNotice(getApiError(requestError)); }
     finally { setBusy(''); }
   };
@@ -44,17 +50,24 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      {modal?.type === 'approve' && <ApproveModal application={modal.application} busy={busy} onClose={() => setModal(null)} onSubmit={(payload) => action(`approve-${modal.application.id}`, () => adminApi.approve(modal.application.id, payload), 'Editor account created.')} />}
+      {modal?.type === 'approve' && <ApproveModal application={modal.application} busy={busy} onClose={() => setModal(null)} onSubmit={(payload) => action(`approve-${modal.application.id}`, () => adminApi.approve(modal.application.id, payload), (result) => `Editor created. Temporary password: ${result.temporary_password}`)} />}
     </DashboardShell>
   );
 }
 
 function BookingsTable({ items, editors, busy, action }) {
   const [assignments, setAssignments] = useState({});
-  return <div className="panel overflow-x-auto"><table className="w-full min-w-[900px] text-left text-sm"><thead className="border-b border-white/[0.07] text-[10px] uppercase tracking-[.14em] text-slate-600"><tr>{['Project', 'Customer', 'Payment', 'Status', 'Editor', 'Created', 'Action'].map((h) => <th key={h} className="px-5 py-4 font-semibold">{h}</th>)}</tr></thead><tbody className="divide-y divide-white/[0.055]">{items.map((booking) => <tr key={booking.id} className="hover:bg-white/[0.018]"><td className="px-5 py-4"><p className="font-medium">{serviceMeta[booking.service_type]?.name || humanize(booking.service_type)}</p><p className="mt-1 text-xs text-slate-600">{booking.booking_ref}</p></td><td className="px-5 py-4"><p className="text-slate-300">{booking.client_name}</p><p className="mt-1 text-xs text-slate-600">{booking.client_email}</p></td><td className="px-5 py-4"><StatusBadge status={booking.payment_status} /></td><td className="px-5 py-4"><StatusBadge status={booking.status} /></td><td className="px-5 py-4 text-slate-400">{booking.editor_name || 'Unassigned'}</td><td className="px-5 py-4 text-xs text-slate-500">{formatDate(booking.created_at)}</td><td className="px-5 py-4">
-    {booking.payment_status !== 'paid' ? <button disabled={!!busy} onClick={() => action(`pay-${booking.id}`, () => adminApi.updatePayment(booking.id, { payment_status: 'paid', payment_id: `manual-${Date.now()}` }), 'Payment marked as paid.')} className="btn-secondary !px-3 !py-2 text-xs">{busy === `pay-${booking.id}` ? <LoaderCircle className="animate-spin" size={14} /> : <Check size={14} />} Mark paid</button> :
-      booking.status === 'unassigned' ? <div className="flex gap-2"><select value={assignments[booking.id] || ''} onChange={(e) => setAssignments({ ...assignments, [booking.id]: e.target.value })} className="input !w-36 !py-2 text-xs"><option value="">Choose editor</option>{editors.filter((e) => e.is_active).map((editor) => <option key={editor.id} value={editor.id}>{editor.name}</option>)}</select><button disabled={!assignments[booking.id] || !!busy} onClick={() => action(`assign-${booking.id}`, () => adminApi.assign(booking.id, Number(assignments[booking.id])), 'Project assigned.')} className="btn-primary !px-3 !py-2 text-xs">Assign</button></div> : <span className="text-xs text-slate-600">In workflow</span>}
-  </td></tr>)}</tbody></table>{!items.length && <Empty label="No bookings yet" />}</div>;
+  const [statusOverrides, setStatusOverrides] = useState({});
+  const statuses = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed', 'cancelled'];
+  return <div className="space-y-4">{items.map((booking) => <article key={booking.id} className="panel p-5"><div className="grid gap-5 xl:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-medium">{serviceMeta[booking.service_type]?.name || humanize(booking.service_type)}</h3><StatusBadge status={booking.status} /><StatusBadge status={booking.payment_status} /></div><p className="mt-2 text-xs text-slate-600">{booking.booking_ref} · {booking.client_name} · {formatDate(booking.created_at)}</p><p className="mt-1 text-xs text-slate-600">{booking.client_email}</p>
+      {booking.delivery && <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-cyan-300 hover:text-cyan-200">View latest delivery <ExternalLink size={14} /></a>}
+      {booking.revision_requests?.length > 0 && <details className="mt-3 text-xs text-pink-300"><summary className="cursor-pointer">{booking.revision_requests.length} revision request(s)</summary><div className="mt-2 space-y-2">{booking.revision_requests.map((revision) => <p key={revision.id} className="rounded-lg bg-pink-500/[0.06] p-3 text-slate-400">{revision.message}</p>)}</div></details>}
+      {booking.assignment_history?.length > 0 && <details className="mt-3 text-xs text-violet-300"><summary className="cursor-pointer">Assignment history</summary><div className="mt-2 space-y-1 text-slate-500">{booking.assignment_history.map((entry) => <p key={entry.id}>{entry.editor_name} · {humanize(entry.assignment_type)} · {formatDate(entry.assigned_at)}</p>)}</div></details>}
+    </div>
+    <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Assignment</p><p className="mt-2 text-sm text-slate-300">{booking.editor_name || 'Unassigned'}</p>{booking.payment_status !== 'paid' ? <button disabled={!!busy} onClick={() => action(`pay-${booking.id}`, () => adminApi.updatePayment(booking.id, { payment_status: 'paid', payment_id: `manual-${Date.now()}` }), 'Payment marked as paid.')} className="btn-secondary mt-3 !px-3 !py-2 text-xs">{busy === `pay-${booking.id}` ? <LoaderCircle className="animate-spin" size={14} /> : <Check size={14} />} Mark paid</button> : <div className="mt-3 flex gap-2"><select value={assignments[booking.id] || ''} onChange={(event) => setAssignments({ ...assignments, [booking.id]: event.target.value })} className="input !py-2 text-xs"><option value="">Choose editor</option>{editors.filter((editor) => editor.is_active).map((editor) => <option key={editor.id} value={editor.id}>{editor.name}</option>)}</select><button disabled={!assignments[booking.id] || !!busy} onClick={() => action(`assign-${booking.id}`, () => booking.assigned_to ? adminApi.reassign(booking.id, Number(assignments[booking.id])) : adminApi.assign(booking.id, Number(assignments[booking.id])), booking.assigned_to ? 'Project reassigned.' : 'Project assigned.')} className="btn-primary !px-3 !py-2 text-xs">{booking.assigned_to ? 'Reassign' : 'Assign'}</button></div>}</div>
+    <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Admin override</p><div className="mt-3 flex gap-2"><select value={statusOverrides[booking.id] || booking.status} onChange={(event) => setStatusOverrides({ ...statusOverrides, [booking.id]: event.target.value })} className="input !py-2 text-xs">{statuses.map((status) => <option key={status} value={status}>{humanize(status)}</option>)}</select><button disabled={!!busy} onClick={() => { const status = statusOverrides[booking.id] || booking.status; action(`status-${booking.id}`, () => adminApi.updateStatus(booking.id, status), 'Project status updated.'); }} className="btn-secondary !px-3 !py-2 text-xs">Update</button></div></div>
+  </div></article>)}{!items.length && <div className="panel"><Empty label="No bookings yet" /></div>}</div>;
 }
 
 function ApplicationsTable({ items, busy, action, setModal }) {
@@ -66,8 +79,8 @@ function EditorsTable({ items, busy, action }) {
 }
 
 function ApproveModal({ application, busy, onClose, onSubmit }) {
-  const [form, setForm] = useState({ email: '', password: '', skills: '' });
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-5 backdrop-blur-sm"><form onSubmit={(e) => { e.preventDefault(); onSubmit({ email: form.email, password: form.password, skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean) }); }} className="panel w-full max-w-md p-6"><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-wider text-violet-400">Approve application</p><h2 className="mt-2 text-xl font-semibold">{application.name}</h2></div><button type="button" onClick={onClose} className="text-slate-600 hover:text-white"><X size={19} /></button></div><div className="mt-6 space-y-4"><label><span className="label">Login email</span><input required type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label><label><span className="label">Temporary password</span><input required minLength={12} className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label><label><span className="label">Skills <span className="text-slate-600">(comma-separated)</span></span><input className="input" value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="Premiere Pro, Motion graphics" /></label></div><button disabled={!!busy} className="btn-primary mt-6 w-full">{busy ? <LoaderCircle className="animate-spin" size={16} /> : <CircleUserRound size={16} />} Create editor account</button></form></div>;
+  const [form, setForm] = useState({ email: '', skills: '' });
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-5 backdrop-blur-sm"><form onSubmit={(e) => { e.preventDefault(); onSubmit({ email: form.email, skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean) }); }} className="panel w-full max-w-md p-6"><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-wider text-violet-400">Approve application</p><h2 className="mt-2 text-xl font-semibold">{application.name}</h2></div><button type="button" onClick={onClose} className="text-slate-600 hover:text-white"><X size={19} /></button></div><div className="mt-6 space-y-4"><label><span className="label">Login email</span><input required type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label><p className="rounded-xl bg-white/[0.03] p-3 text-xs leading-5 text-slate-500">A secure temporary password will be generated once and shown after approval.</p><label><span className="label">Skills <span className="text-slate-600">(comma-separated)</span></span><input className="input" value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="Premiere Pro, Motion graphics" /></label></div><button disabled={!!busy} className="btn-primary mt-6 w-full">{busy ? <LoaderCircle className="animate-spin" size={16} /> : <CircleUserRound size={16} />} Create editor account</button></form></div>;
 }
 
 function Empty({ label }) { return <div className="py-16 text-center text-sm text-slate-600">{label}</div>; }

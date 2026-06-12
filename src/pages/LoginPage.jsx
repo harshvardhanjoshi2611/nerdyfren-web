@@ -18,7 +18,7 @@ export default function LoginPage({ role }) {
       const result = await (isAdmin ? adminApi.login(form) : editorApi.login(form));
       localStorage.setItem(`nerdyfren_${role}_token`, result.token);
       if (result.editor) localStorage.setItem('nerdyfren_editor_profile', JSON.stringify(result.editor));
-      navigate(location.state?.from?.pathname || `/${role}`);
+      navigate(location.state?.from?.pathname || (role === 'editor' ? '/editor/dashboard' : `/${role}`));
     } catch (requestError) { setError(getApiError(requestError, 'Login failed.')); }
     finally { setLoading(false); }
   };
@@ -38,6 +38,7 @@ export default function LoginPage({ role }) {
             <button disabled={loading} className="btn-primary w-full">{loading ? <LoaderCircle className="animate-spin" size={17} /> : <>Sign in <ArrowRight size={17} /></>}</button>
           </form>
           <p className="mt-6 text-center text-xs text-slate-600">{isAdmin ? 'Restricted to NerdyFren operations.' : 'Accounts are created after your application is approved.'}</p>
+          {!isAdmin && <p className="mt-2 text-center text-xs text-slate-700">Mobile sign-in and OTP are reserved for a future authentication phase.</p>}
           <Link to="/" className="mt-8 block text-center text-sm text-slate-500 hover:text-white">Back to NerdyFren</Link>
         </div>
       </div>

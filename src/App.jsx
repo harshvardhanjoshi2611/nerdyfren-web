@@ -27,8 +27,10 @@ export default function App() {
       <Route element={<UserProtectedRoute />}>
         <Route path="/dashboard" element={<UserDashboard />} />
       </Route>
+      <Route path="/editor/signin" element={<LoginPage role="editor" />} />
       <Route path="/editor/login" element={<LoginPage role="editor" />} />
       <Route element={<ProtectedRoute role="editor" />}>
+        <Route path="/editor/dashboard" element={<EditorDashboard />} />
         <Route path="/editor" element={<EditorDashboard />} />
         <Route path="/editor/projects/:id" element={<ProjectDetailsPage />} />
       </Route>

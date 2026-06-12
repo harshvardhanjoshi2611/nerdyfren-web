@@ -6,7 +6,7 @@ export default function DashboardShell({ role, links, children }) {
   const navigate = useNavigate();
   const logout = () => {
     localStorage.removeItem(`nerdyfren_${role}_token`);
-    navigate(`/${role}/login`);
+    navigate(role === 'editor' ? '/editor/signin' : `/${role}/login`);
   };
   return (
     <div className="min-h-screen bg-canvas">

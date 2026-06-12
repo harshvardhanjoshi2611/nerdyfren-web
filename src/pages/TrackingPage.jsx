@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Circle, Search, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Check, Circle, ExternalLink, Search, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import Footer from '../components/Footer';
@@ -8,7 +8,7 @@ import { bookingsApi, getApiError } from '../lib/api';
 import { formatDate, formatMoney, humanize, serviceMeta } from '../lib/format';
 import useAuth from '../hooks/useAuth';
 
-const stages = ['unassigned', 'assigned', 'in_progress', 'revision', 'delivered'];
+const stages = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed'];
 
 export default function TrackingPage() {
   const [params, setParams] = useSearchParams();
@@ -53,13 +53,22 @@ export default function TrackingPage() {
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_status} /></div></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Created</p><p className="mt-2 font-semibold">{formatDate(booking.created_at)}</p></div>
               </div>
+              {booking.delivery && (
+                <div className="border-t border-white/[0.07] p-6">
+                  <div className="rounded-xl border border-cyan-400/15 bg-cyan-500/[0.06] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[.16em] text-cyan-300">Delivery ready</p>
+                    {booking.delivery.delivery_note && <p className="mt-3 text-sm leading-6 text-slate-400">{booking.delivery.delivery_note}</p>}
+                    <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="btn-primary mt-4">Open delivery <ExternalLink size={15} /></a>
+                  </div>
+                </div>
+              )}
               <div className="border-t border-white/[0.07] p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Progress</p>
                 <div className="mt-6 space-y-0">
-                  {stages.filter((s) => s !== 'revision' || booking.status === 'revision').map((stage, index, list) => {
+                  {stages.filter((stage) => stage !== 'awaiting_revision' || booking.status === 'awaiting_revision').map((stage, index, list) => {
                     const currentIndex = stages.indexOf(booking.status);
                     const stageIndex = stages.indexOf(stage);
-                    const complete = stageIndex < currentIndex || booking.status === 'delivered';
+                    const complete = stageIndex < currentIndex || ['final_delivered', 'completed'].includes(booking.status);
                     const active = stage === booking.status;
                     return <div key={stage} className="flex gap-4"><div className="flex flex-col items-center">{complete ? <span className="grid h-7 w-7 place-items-center rounded-full bg-[#7C3AED] text-white"><Check size={14} /></span> : active ? <span className="grid h-7 w-7 place-items-center rounded-full border-4 border-violet-400/30 bg-violet-400" /> : <Circle size={27} className="text-slate-800" />}{index < list.length - 1 && <div className={`h-9 w-px ${complete ? 'bg-[#7C3AED]' : 'bg-white/10'}`} />}</div><div className="pt-1"><p className={`text-sm font-medium capitalize ${active || complete ? 'text-slate-200' : 'text-slate-600'}`}>{humanize(stage)}</p>{active && <p className="mt-1 text-xs text-slate-500">{booking.editor_name ? `${booking.editor_name} is handling your project.` : 'Our team is moving this forward.'}</p>}</div></div>;
                   })}

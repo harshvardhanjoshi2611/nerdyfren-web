@@ -3,7 +3,11 @@ import { humanize } from '../lib/format';
 const tones = {
   paid: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300',
   delivered: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300',
-  in_progress: 'border-blue-400/20 bg-blue-500/10 text-blue-300',
+  work_in_progress: 'border-blue-400/20 bg-blue-500/10 text-blue-300',
+  draft_submitted: 'border-cyan-400/20 bg-cyan-500/10 text-cyan-300',
+  awaiting_revision: 'border-pink-400/20 bg-pink-500/10 text-pink-300',
+  final_delivered: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300',
+  completed: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300',
   assigned: 'border-violet-400/20 bg-violet-500/10 text-violet-300',
   pending: 'border-amber-400/20 bg-amber-500/10 text-amber-300',
   unassigned: 'border-amber-400/20 bg-amber-500/10 text-amber-300',

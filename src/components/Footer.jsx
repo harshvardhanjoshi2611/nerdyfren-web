@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="flex flex-wrap gap-5 text-sm text-slate-500">
           <Link to="/services" className="hover:text-white">Services</Link>
           <Link to={isAuthenticated ? '/dashboard' : '/track'} className="hover:text-white">Track order</Link>
-          <Link to="/editor/login" className="hover:text-white">Editor portal</Link>
+          <Link to="/editor/signin" className="hover:text-white">Editor portal</Link>
           <Link to="/admin/login" className="hover:text-white">Admin</Link>
         </div>
       </div>

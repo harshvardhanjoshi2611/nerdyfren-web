@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, CreditCard, FolderKanban, LogOut, Plus } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, CreditCard, ExternalLink, FolderKanban, LoaderCircle, LogOut, Plus, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
@@ -13,6 +13,8 @@ export default function UserDashboard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [revision, setRevision] = useState({ bookingId: null, message: '' });
+  const [revisionBusy, setRevisionBusy] = useState(false);
 
   const loadBookings = () => {
     setLoading(true);
@@ -24,6 +26,20 @@ export default function UserDashboard() {
   };
 
   useEffect(loadBookings, []);
+
+  const requestRevision = async (bookingId) => {
+    setRevisionBusy(true);
+    setError('');
+    try {
+      await userApi.requestRevision(bookingId, revision.message);
+      setRevision({ bookingId: null, message: '' });
+      loadBookings();
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Could not submit your revision request.'));
+    } finally {
+      setRevisionBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -51,7 +67,7 @@ export default function UserDashboard() {
           {[
             [FolderKanban, 'Total projects', bookings.length],
             [CreditCard, 'Paid', bookings.filter((item) => item.payment_status === 'paid').length],
-            [CalendarDays, 'In progress', bookings.filter((item) => ['assigned', 'in_progress', 'revision'].includes(item.status)).length],
+            [CalendarDays, 'In progress', bookings.filter((item) => ['assigned', 'work_in_progress', 'awaiting_revision'].includes(item.status)).length],
           ].map(([Icon, label, value]) => (
             <div key={label} className="panel p-5">
               <Icon className="text-violet-300" size={19} />
@@ -97,6 +113,32 @@ export default function UserDashboard() {
                       Open tracking <ArrowUpRight size={15} />
                     </Link>
                   </div>
+                  {booking.delivery && (
+                    <div className="mt-5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300">Delivery ready</p>
+                          {booking.delivery.delivery_note && <p className="mt-2 text-sm text-slate-400">{booking.delivery.delivery_note}</p>}
+                        </div>
+                        <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="btn-primary !px-4 !py-2.5">Open delivery <ExternalLink size={15} /></a>
+                      </div>
+                    </div>
+                  )}
+                  {['draft_submitted', 'final_delivered'].includes(booking.status) && (
+                    <div className="mt-4">
+                      {revision.bookingId === booking.id ? (
+                        <div className="rounded-xl border border-pink-400/15 bg-pink-500/[0.05] p-4">
+                          <label><span className="label">Revision notes</span><textarea className="input min-h-24 resize-y" value={revision.message} onChange={(event) => setRevision({ bookingId: booking.id, message: event.target.value })} placeholder="Be specific about what should change." /></label>
+                          <div className="mt-3 flex gap-2">
+                            <button disabled={revisionBusy || revision.message.trim().length < 3} onClick={() => requestRevision(booking.id)} className="btn-primary !px-4 !py-2.5">{revisionBusy ? <LoaderCircle className="animate-spin" size={15} /> : <RotateCcw size={15} />} Send request</button>
+                            <button onClick={() => setRevision({ bookingId: null, message: '' })} className="btn-secondary !px-4 !py-2.5">Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setRevision({ bookingId: booking.id, message: '' })} className="text-sm font-medium text-pink-300 hover:text-pink-200">Request a revision</button>
+                      )}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>

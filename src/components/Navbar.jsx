@@ -10,7 +10,7 @@ export default function Navbar() {
   const links = [
     ['Services', '/services'],
     ['Track order', isAuthenticated ? '/dashboard' : '/track'],
-    ['For editors', '/editor/login'],
+    ['For editors', '/editor/signin'],
   ];
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-canvas/75 backdrop-blur-xl">

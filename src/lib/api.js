@@ -24,18 +24,22 @@ export const API_ENDPOINTS = Object.freeze({
   authMe: `${API_PREFIX}/auth/me`,
   userBookings: `${API_PREFIX}/user/bookings`,
   userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
+  userBookingRevision: (id) => `${API_PREFIX}/user/bookings/${id}/revision`,
   adminLogin: `${API_PREFIX}/admin/login`,
-  editorLogin: `${API_PREFIX}/editors/login`,
-  editorProfile: `${API_PREFIX}/editors/me`,
-  editorProjects: `${API_PREFIX}/editors/projects`,
-  editorProject: (id) => `${API_PREFIX}/editors/projects/${id}`,
-  editorProjectStatus: (id) => `${API_PREFIX}/editors/projects/${id}/status`,
+  editorLogin: `${API_PREFIX}/editor/login`,
+  editorProfile: `${API_PREFIX}/editor/me`,
+  editorProjects: `${API_PREFIX}/editor/projects`,
+  editorProject: (id) => `${API_PREFIX}/editor/projects/${id}`,
+  editorProjectStatus: (id) => `${API_PREFIX}/editor/projects/${id}/status`,
+  editorProjectDelivery: (id) => `${API_PREFIX}/editor/projects/${id}/delivery`,
   adminStats: `${API_PREFIX}/admin/stats`,
   adminProjects: `${API_PREFIX}/admin/projects`,
   adminEditors: `${API_PREFIX}/admin/editors`,
   adminApplications: `${API_PREFIX}/admin/applications`,
   adminBookingPayment: (id) => `${API_PREFIX}/admin/bookings/${id}/payment`,
   adminProjectAssignment: (id) => `${API_PREFIX}/admin/projects/${id}/assign`,
+  adminProjectReassignment: (id) => `${API_PREFIX}/admin/projects/${id}/reassign`,
+  adminProjectStatus: (id) => `${API_PREFIX}/admin/projects/${id}/status`,
   adminApplicationApproval: (id) => `${API_PREFIX}/admin/applications/${id}/approve`,
   adminApplicationRejection: (id) => `${API_PREFIX}/admin/applications/${id}/reject`,
   adminEditorDeactivation: (id) => `${API_PREFIX}/admin/editors/${id}/deactivate`,
@@ -54,7 +58,7 @@ api.interceptors.request.use((config) => {
     || config.url?.startsWith(`${API_PREFIX}/user`);
   const area = config.url?.startsWith(`${API_PREFIX}/admin`)
     ? 'admin'
-    : config.url?.startsWith(`${API_PREFIX}/editors`)
+    : config.url?.startsWith(`${API_PREFIX}/editor`)
       ? 'editor'
       : isUserRequest
         ? 'user'
@@ -69,7 +73,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) localStorage.removeItem('nerdyfren_admin_token');
-      if (error.config?.url?.startsWith(`${API_PREFIX}/editors`)) localStorage.removeItem('nerdyfren_editor_token');
+      if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) localStorage.removeItem('nerdyfren_editor_token');
       if (
         error.config?.url === API_ENDPOINTS.authLogout
         || error.config?.url === API_ENDPOINTS.authMe
@@ -119,6 +123,7 @@ export const authApi = {
 export const userApi = {
   bookings: () => api.get(API_ENDPOINTS.userBookings).then((r) => expectObject(r.data, 'bookings')),
   booking: (id) => api.get(API_ENDPOINTS.userBooking(id)).then((r) => expectObject(r.data, 'booking')),
+  requestRevision: (id, message) => api.post(API_ENDPOINTS.userBookingRevision(id), { message }).then((r) => r.data),
 };
 
 export const editorApi = {
@@ -127,6 +132,7 @@ export const editorApi = {
   projects: () => api.get(API_ENDPOINTS.editorProjects).then((r) => r.data),
   project: (id) => api.get(API_ENDPOINTS.editorProject(id)).then((r) => r.data),
   updateStatus: (id, status) => api.patch(API_ENDPOINTS.editorProjectStatus(id), { status }).then((r) => r.data),
+  submitDelivery: (id, data) => api.post(API_ENDPOINTS.editorProjectDelivery(id), data).then((r) => r.data),
 };
 
 export const adminApi = {
@@ -137,6 +143,8 @@ export const adminApi = {
   applications: () => api.get(API_ENDPOINTS.adminApplications).then((r) => r.data),
   updatePayment: (id, data) => api.patch(API_ENDPOINTS.adminBookingPayment(id), data).then((r) => r.data),
   assign: (id, editorId) => api.post(API_ENDPOINTS.adminProjectAssignment(id), { editor_id: editorId }).then((r) => r.data),
+  reassign: (id, editorId) => api.post(API_ENDPOINTS.adminProjectReassignment(id), { editor_id: editorId }).then((r) => r.data),
+  updateStatus: (id, status) => api.patch(API_ENDPOINTS.adminProjectStatus(id), { status }).then((r) => r.data),
   approve: (id, data) => api.post(API_ENDPOINTS.adminApplicationApproval(id), data).then((r) => r.data),
   reject: (id, notes) => api.post(API_ENDPOINTS.adminApplicationRejection(id), { notes }).then((r) => r.data),
   deactivate: (id) => api.patch(API_ENDPOINTS.adminEditorDeactivation(id)).then((r) => r.data),
