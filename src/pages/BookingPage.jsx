@@ -11,7 +11,18 @@ export default function BookingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [services, setServices] = useState(fallbackServices);
-  const [form, setForm] = useState({ client_name: '', client_email: '', client_phone: '', service_type: searchParams.get('service') || '', brief: '', referenceUrl: '' });
+  const requestedService = searchParams.get('service');
+  const initialService = fallbackServices.some((service) => service.id === requestedService && service.bookable !== false) ? requestedService : '';
+  const [form, setForm] = useState({
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+    service_type: initialService,
+    brief: '',
+    referenceAudioUrl: '',
+    referenceVideoUrl: '',
+    rawFootageUrl: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,10 +30,11 @@ export default function BookingPage() {
     let active = true;
     servicesApi.list().then((items) => {
       if (!active) return;
+      const bookableItems = items.filter((item) => item.bookable !== false && !item.coming_soon);
       setServices(items);
-      setForm((current) => current.service_type || !items[0]
+      setForm((current) => current.service_type || !bookableItems[0]
         ? current
-        : { ...current, service_type: items[0].id });
+        : { ...current, service_type: bookableItems[0].id });
     }).catch(() => {
       if (!active) return;
       setServices(fallbackServices);
@@ -45,6 +57,8 @@ export default function BookingPage() {
   }, [user]);
 
   const selected = services.find((item) => item.id === form.service_type);
+  const selectedMeta = serviceMeta[form.service_type] || {};
+  const needsAudioVideo = ['trend-hopper', 'video-reel', 'video-copy'].includes(form.service_type);
   const update = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
@@ -61,7 +75,11 @@ export default function BookingPage() {
         client_phone: form.client_phone,
         service_type: form.service_type,
         brief: form.brief,
-        ...(form.referenceUrl ? { ref_links: [{ url: form.referenceUrl, label: 'Creative reference' }] } : {}),
+        ref_links: [
+          ...(form.referenceAudioUrl ? [{ url: form.referenceAudioUrl, label: 'Reference Audio' }] : []),
+          ...(form.referenceVideoUrl ? [{ url: form.referenceVideoUrl, label: 'Reference Video' }] : []),
+          ...(form.rawFootageUrl ? [{ url: form.rawFootageUrl, label: 'Raw Footage' }] : []),
+        ],
       };
       const booking = await bookingsApi.create(payload);
       sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(booking));
@@ -92,12 +110,15 @@ export default function BookingPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {services.map((service) => {
                   const active = form.service_type === service.id;
-                  return <label key={service.id} className={`cursor-pointer rounded-xl border p-4 transition ${active ? 'border-violet-400/60 bg-violet-500/10' : 'border-white/10 bg-white/[0.025] hover:border-white/20'}`}><input type="radio" name="service_type" value={service.id} checked={active} onChange={update} className="sr-only" /><span className="flex items-center justify-between"><span className="text-sm font-medium">{serviceMeta[service.id]?.name || service.id}</span>{active && <Check size={15} className="text-violet-300" />}</span><span className="mt-2 block text-xs text-slate-500">{formatMoney(service.amount)}</span></label>;
+                  const unavailable = service.bookable === false || service.coming_soon;
+                  return <label key={service.id} className={`rounded-xl border p-4 transition ${unavailable ? 'cursor-not-allowed border-white/5 bg-white/[0.015] opacity-55' : active ? 'cursor-pointer border-violet-400/60 bg-violet-500/10' : 'cursor-pointer border-white/10 bg-white/[0.025] hover:border-white/20'}`}><input disabled={unavailable} type="radio" name="service_type" value={service.id} checked={active} onChange={update} className="sr-only" /><span className="flex items-center justify-between"><span className="text-sm font-medium">{service.name || serviceMeta[service.id]?.name || service.id}</span>{unavailable ? <span className="text-[10px] uppercase text-cyan-300">Coming soon</span> : active && <Check size={15} className="text-violet-300" />}</span><span className="mt-2 block text-xs text-slate-500">{unavailable ? 'Surge pricing applies' : formatMoney(service.amount)}</span></label>;
                 })}
               </div>
             </fieldset>
             <label><span className="label">What should we create?</span><textarea required name="brief" value={form.brief} onChange={update} className="input min-h-36 resize-y" placeholder="Share the goal, audience, desired tone, raw footage and anything that would help your specialist nail the first cut." /></label>
-            <label><span className="label">Reference link <span className="text-slate-600">(optional)</span></span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input type="url" name="referenceUrl" value={form.referenceUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div></label>
+            {needsAudioVideo && <label><span className="label">Reference Audios</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceAudioUrl" value={form.referenceAudioUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            {needsAudioVideo && <label><span className="label">Reference Videos</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceVideoUrl" value={form.referenceVideoUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            <label><span className="label">Raw Footage Drive Link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="rawFootageUrl" value={form.rawFootageUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div></label>
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading || !selected} className="btn-primary w-full sm:w-auto">{loading ? <LoaderCircle className="animate-spin" size={17} /> : <>Submit project <ArrowRight size={17} /></>}</button>
           </form>
@@ -105,8 +126,9 @@ export default function BookingPage() {
         <aside className="lg:pt-24">
           <div className="panel sticky top-8 p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Order summary</p>
-            <h2 className="mt-5 text-xl font-semibold">{serviceMeta[form.service_type]?.name || 'Select a service'}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{serviceMeta[form.service_type]?.short || 'Choose the best package for your next upload.'}</p>
+            <h2 className="mt-5 text-xl font-semibold">{selectedMeta.name || 'Select a service'}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{selectedMeta.short || 'Choose the best package for your next upload.'}</p>
+            {selectedMeta.revisionCycles > 0 && <p className="mt-3 text-xs font-medium text-violet-300">{selectedMeta.revisionCycles} Revision Cycles</p>}
             <div className="my-6 h-px bg-white/[0.07]" />
             <div className="flex items-center justify-between"><span className="text-sm text-slate-400">Project total</span><span className="text-2xl font-bold">{selected ? formatMoney(selected.amount) : '-'}</span></div>
             <p className="mt-2 text-xs text-slate-600">Payment is collected manually after the brief is reviewed.</p>
