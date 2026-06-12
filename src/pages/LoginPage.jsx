@@ -18,6 +18,8 @@ export default function LoginPage({ role }) {
     event.preventDefault(); setLoading(true); setError('');
     try {
       const result = await (isSuperAdmin ? superAdminApi.login(form) : isAdmin ? adminApi.login(form) : editorApi.login(form));
+      if (isAdmin) localStorage.removeItem('nerdyfren_super_admin_token');
+      if (isSuperAdmin) localStorage.removeItem('nerdyfren_admin_token');
       localStorage.setItem(`nerdyfren_${role}_token`, result.token);
       if (result.editor) localStorage.setItem('nerdyfren_editor_profile', JSON.stringify(result.editor));
       navigate(location.state?.from?.pathname || (role === 'editor' ? '/editor/dashboard' : isSuperAdmin ? '/super-admin/dashboard' : '/admin'));

@@ -64,7 +64,7 @@ export const formatDateTime = (date) =>
     }).format(new Date(date))
     : '-';
 
-export const humanize = (value = '') => value.replaceAll('_', ' ');
+export const humanize = (value = '') => String(value || '').replaceAll('_', ' ');
 
 export const getProjectName = (booking = {}) => {
   const serviceName = serviceMeta[booking.service_type]?.name || humanize(booking.service_type);

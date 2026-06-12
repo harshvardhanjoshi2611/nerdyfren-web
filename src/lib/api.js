@@ -34,6 +34,12 @@ export const API_ENDPOINTS = Object.freeze({
   editorProjectStatus: (id) => `${API_PREFIX}/editor/projects/${id}/status`,
   editorProjectDelivery: (id) => `${API_PREFIX}/editor/projects/${id}/delivery`,
   adminStats: `${API_PREFIX}/admin/stats`,
+  adminReports: `${API_PREFIX}/admin/reports`,
+  adminOperations: `${API_PREFIX}/admin/operations`,
+  adminWorkload: `${API_PREFIX}/admin/workload`,
+  adminLeads: `${API_PREFIX}/admin/leads`,
+  adminLead: (id) => `${API_PREFIX}/admin/leads/${id}`,
+  adminExport: (type) => `${API_PREFIX}/admin/exports/${type}`,
   adminProjects: `${API_PREFIX}/admin/projects`,
   adminEditors: `${API_PREFIX}/admin/editors`,
   adminApplications: `${API_PREFIX}/admin/applications`,
@@ -56,6 +62,8 @@ export const API_ENDPOINTS = Object.freeze({
   superAdminAdmin: (id) => `${API_PREFIX}/super-admin/admins/${id}`,
   superAdminEditors: `${API_PREFIX}/super-admin/editors`,
   superAdminEditor: (id) => `${API_PREFIX}/super-admin/editors/${id}`,
+  superAdminAuditLogs: `${API_PREFIX}/super-admin/audit-logs`,
+  superAdminAuditExport: `${API_PREFIX}/super-admin/exports/audit`,
 });
 
 export const api = axios.create({
@@ -162,6 +170,13 @@ export const editorApi = {
 export const adminApi = {
   login: (data) => api.post(API_ENDPOINTS.adminLogin, data).then((r) => r.data),
   stats: () => api.get(API_ENDPOINTS.adminStats).then((r) => r.data),
+  reports: (params) => api.get(API_ENDPOINTS.adminReports, { params }).then((r) => r.data),
+  operations: (params) => api.get(API_ENDPOINTS.adminOperations, { params }).then((r) => r.data),
+  workload: (params) => api.get(API_ENDPOINTS.adminWorkload, { params }).then((r) => r.data),
+  leads: (params) => api.get(API_ENDPOINTS.adminLeads, { params }).then((r) => r.data),
+  createLead: (data) => api.post(API_ENDPOINTS.adminLeads, data).then((r) => r.data),
+  updateLead: (id, data) => api.put(API_ENDPOINTS.adminLead(id), data).then((r) => r.data),
+  exportCsv: (type, params) => api.get(API_ENDPOINTS.adminExport(type), { params, responseType: 'blob' }),
   bookings: () => api.get(API_ENDPOINTS.adminProjects).then((r) => r.data),
   editors: () => api.get(API_ENDPOINTS.adminEditors).then((r) => r.data),
   applications: () => api.get(API_ENDPOINTS.adminApplications).then((r) => r.data),
@@ -188,4 +203,6 @@ export const superAdminApi = {
   updateAdmin: (id, isActive) => api.patch(API_ENDPOINTS.superAdminAdmin(id), { is_active: isActive }).then((r) => r.data),
   createEditor: (data) => api.post(API_ENDPOINTS.superAdminEditors, data).then((r) => r.data),
   updateEditor: (id, isActive) => api.patch(API_ENDPOINTS.superAdminEditor(id), { is_active: isActive }).then((r) => r.data),
+  auditLogs: (params) => api.get(API_ENDPOINTS.superAdminAuditLogs, { params }).then((r) => r.data),
+  exportAudit: (params) => api.get(API_ENDPOINTS.superAdminAuditExport, { params, responseType: 'blob' }),
 };

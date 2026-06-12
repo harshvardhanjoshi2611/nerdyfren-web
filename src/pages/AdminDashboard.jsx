@@ -6,22 +6,26 @@ import StatusBadge from '../components/StatusBadge';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi, getApiError } from '../lib/api';
 import { formatDateTime, formatMoney, getProjectName, humanize, serviceMeta } from '../lib/format';
+import { AuditPanel, ExportPanel, LeadsPanel, OperationsPanel, ReportsPanel, WorkloadPanel } from '../components/OperationsPanels';
+import { servicesApi } from '../lib/api';
 
 const links = [{ label: 'Operations', to: '/admin', icon: LayoutDashboard }];
-const tabs = ['Projects', 'Editors'];
 const projectStatuses = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed', 'cancelled'];
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('Projects');
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
+  const isSuperAdmin = Boolean(localStorage.getItem('nerdyfren_super_admin_token'));
+  const tabs = ['Reports', 'Operations', 'Projects', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
   const { data, loading, error, reload } = useFetch(async () => {
-    const [stats, bookings, editors] = await Promise.all([
+    const [stats, bookings, editors, services] = await Promise.all([
       adminApi.stats(),
       adminApi.bookings(),
       adminApi.editors(),
+      servicesApi.list(),
     ]);
-    return { stats, bookings, editors };
+    return { stats, bookings, editors, services };
   }, []);
 
   const action = async (key, work, success) => {
@@ -39,7 +43,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <DashboardShell role="admin" links={links}>
+    <DashboardShell role={isSuperAdmin ? 'super_admin' : 'admin'} links={links}>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={reload} /> : (
         <div className="mx-auto max-w-[1600px]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -72,14 +76,20 @@ export default function AdminDashboard() {
             {tabs.map((item) => (
               <button key={item} onClick={() => setTab(item)} className={`border-b-2 px-4 pb-3 text-sm font-medium transition ${tab === item ? 'border-violet-400 text-white' : 'border-transparent text-slate-600 hover:text-slate-300'}`}>
                 {item}
-                <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px]">{item === 'Projects' ? data.bookings.length : data.editors.length}</span>
+                {(item === 'Projects' || item === 'Editors') && <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px]">{item === 'Projects' ? data.bookings.length : data.editors.length}</span>}
               </button>
             ))}
           </div>
 
           <div className="mt-5">
+            {tab === 'Reports' && <ReportsPanel editors={data.editors} services={data.services} />}
+            {tab === 'Operations' && <OperationsPanel editors={data.editors} services={data.services} />}
             {tab === 'Projects' && <ProjectsTable items={data.bookings} editors={data.editors} busy={busy} action={action} />}
+            {tab === 'Workload' && <WorkloadPanel editors={data.editors} services={data.services} />}
+            {tab === 'Leads' && <LeadsPanel services={data.services} />}
             {tab === 'Editors' && <EditorsTable items={data.editors} busy={busy} action={action} />}
+            {tab === 'Exports' && <ExportPanel isSuperAdmin={isSuperAdmin} />}
+            {tab === 'Audit Trail' && <AuditPanel />}
           </div>
         </div>
       )}
