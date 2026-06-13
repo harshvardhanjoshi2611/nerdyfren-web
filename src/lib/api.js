@@ -21,6 +21,8 @@ export const API_ENDPOINTS = Object.freeze({
   applications: `${API_PREFIX}/applications`,
   authSignup: `${API_PREFIX}/auth/signup`,
   authLogin: `${API_PREFIX}/auth/login`,
+  authForgotPassword: `${API_PREFIX}/auth/forgot-password`,
+  authResetPassword: `${API_PREFIX}/auth/reset-password`,
   authLogout: `${API_PREFIX}/auth/logout`,
   authMe: `${API_PREFIX}/auth/me`,
   userBookings: `${API_PREFIX}/user/bookings`,
@@ -30,7 +32,11 @@ export const API_ENDPOINTS = Object.freeze({
   clientApprove: `${API_PREFIX}/client/approve`,
   clientRevision: `${API_PREFIX}/client/revision`,
   adminLogin: `${API_PREFIX}/admin/login`,
+  adminForgotPassword: `${API_PREFIX}/admin/forgot-password`,
+  adminResetPassword: `${API_PREFIX}/admin/reset-password`,
   editorLogin: `${API_PREFIX}/editor/login`,
+  editorForgotPassword: `${API_PREFIX}/editor/forgot-password`,
+  editorResetPassword: `${API_PREFIX}/editor/reset-password`,
   editorProfile: `${API_PREFIX}/editor/me`,
   editorProjects: `${API_PREFIX}/editor/projects`,
   editorProject: (id) => `${API_PREFIX}/editor/projects/${id}`,
@@ -57,6 +63,8 @@ export const API_ENDPOINTS = Object.freeze({
   adminApplicationRejection: (id) => `${API_PREFIX}/admin/applications/${id}/reject`,
   adminEditorDeactivation: (id) => `${API_PREFIX}/admin/editors/${id}/deactivate`,
   superAdminLogin: `${API_PREFIX}/super-admin/login`,
+  superAdminForgotPassword: `${API_PREFIX}/super-admin/forgot-password`,
+  superAdminResetPassword: `${API_PREFIX}/super-admin/reset-password`,
   superAdminCms: `${API_PREFIX}/super-admin/cms`,
   superAdminSetting: (key) => `${API_PREFIX}/super-admin/settings/${key}`,
   superAdminHomepage: (key) => `${API_PREFIX}/super-admin/homepage/${key}`,
@@ -167,6 +175,8 @@ export const applicationsApi = {
 export const authApi = {
   signup: (data) => api.post(API_ENDPOINTS.authSignup, data).then((r) => expectObject(r.data, 'signup')),
   login: (data) => api.post(API_ENDPOINTS.authLogin, data).then((r) => expectObject(r.data, 'login')),
+  forgotPassword: (data) => api.post(API_ENDPOINTS.authForgotPassword, data).then((r) => expectObject(r.data, 'password reset request')),
+  resetPassword: (data) => api.post(API_ENDPOINTS.authResetPassword, data).then((r) => expectObject(r.data, 'password reset')),
   logout: () => api.post(API_ENDPOINTS.authLogout).then((r) => r.data),
   me: () => api.get(API_ENDPOINTS.authMe).then((r) => expectObject(r.data, 'profile')),
 };
@@ -179,6 +189,8 @@ export const userApi = {
 
 export const editorApi = {
   login: (data) => api.post(API_ENDPOINTS.editorLogin, data).then((r) => r.data),
+  forgotPassword: (data) => api.post(API_ENDPOINTS.editorForgotPassword, data).then((r) => r.data),
+  resetPassword: (data) => api.post(API_ENDPOINTS.editorResetPassword, data).then((r) => r.data),
   profile: () => api.get(API_ENDPOINTS.editorProfile).then((r) => r.data),
   projects: () => api.get(API_ENDPOINTS.editorProjects).then((r) => r.data),
   project: (id) => api.get(API_ENDPOINTS.editorProject(id)).then((r) => r.data),
@@ -189,6 +201,8 @@ export const editorApi = {
 
 export const adminApi = {
   login: (data) => api.post(API_ENDPOINTS.adminLogin, data).then((r) => r.data),
+  forgotPassword: (data) => api.post(API_ENDPOINTS.adminForgotPassword, data).then((r) => r.data),
+  resetPassword: (data) => api.post(API_ENDPOINTS.adminResetPassword, data).then((r) => r.data),
   stats: () => api.get(API_ENDPOINTS.adminStats).then((r) => r.data),
   payments: () => api.get(API_ENDPOINTS.adminPayments).then((r) => expectArray(r.data, 'payments')),
   verifyPayment: (data) => api.post(API_ENDPOINTS.adminPaymentVerify, data).then((r) => r.data),
@@ -213,6 +227,8 @@ export const adminApi = {
 
 export const superAdminApi = {
   login: (data) => api.post(API_ENDPOINTS.superAdminLogin, data).then((r) => r.data),
+  forgotPassword: (data) => api.post(API_ENDPOINTS.superAdminForgotPassword, data).then((r) => r.data),
+  resetPassword: (data) => api.post(API_ENDPOINTS.superAdminResetPassword, data).then((r) => r.data),
   cms: () => api.get(API_ENDPOINTS.superAdminCms).then((r) => r.data),
   updateSetting: (key, value) => api.put(API_ENDPOINTS.superAdminSetting(key), { value }).then((r) => r.data),
   updateHomepage: (key, data) => api.put(API_ENDPOINTS.superAdminHomepage(key), data).then((r) => r.data),

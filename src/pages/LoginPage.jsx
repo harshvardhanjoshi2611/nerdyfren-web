@@ -13,6 +13,11 @@ export default function LoginPage({ role }) {
   const isAdmin = role === 'admin';
   const isSuperAdmin = role === 'super_admin';
   const isOperations = isAdmin || isSuperAdmin;
+  const forgotPath = isSuperAdmin
+    ? '/super-admin/forgot-password'
+    : isAdmin
+      ? '/admin/forgot-password'
+      : '/editor/forgot-password';
 
   const submit = async (event) => {
     event.preventDefault(); setLoading(true); setError('');
@@ -38,6 +43,7 @@ export default function LoginPage({ role }) {
           <form onSubmit={submit} className="mt-9 space-y-5">
             <label><span className="label">Email</span><input required type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={isSuperAdmin ? 'superadmin@nerdyfren.com' : isAdmin ? 'admin@nerdyfren.com' : 'you@example.com'} /></label>
             <label><span className="label">Password</span><input required type="password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Your secure password" /></label>
+            <div className="-mt-2 text-right"><Link to={forgotPath} className="text-sm text-violet-300 hover:text-violet-200">Forgot password?</Link></div>
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading} className="btn-primary w-full">{loading ? <LoaderCircle className="animate-spin" size={17} /> : <>Sign in <ArrowRight size={17} /></>}</button>
           </form>

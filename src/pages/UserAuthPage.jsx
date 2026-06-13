@@ -91,6 +91,7 @@ export default function UserAuthPage({ mode }) {
               <span className="label">Password</span>
               <input required minLength={isSignup ? 8 : 1} type="password" className="input" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder={isSignup ? 'At least 8 characters' : 'Your password'} />
             </label>
+            {!isSignup && <div className="-mt-2 text-right"><Link to="/forgot-password" className="text-sm text-violet-300 hover:text-violet-200">Forgot password?</Link></div>}
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading} className="btn-primary w-full">
               {loading ? <LoaderCircle className="animate-spin" size={17} /> : <>{isSignup ? 'Create account' : 'Sign in'} <ArrowRight size={17} /></>}
