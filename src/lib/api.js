@@ -26,6 +26,9 @@ export const API_ENDPOINTS = Object.freeze({
   userBookings: `${API_PREFIX}/user/bookings`,
   userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
   userBookingRevision: (id) => `${API_PREFIX}/user/bookings/${id}/revision`,
+  paymentNotify: `${API_PREFIX}/payments/notify`,
+  clientApprove: `${API_PREFIX}/client/approve`,
+  clientRevision: `${API_PREFIX}/client/revision`,
   adminLogin: `${API_PREFIX}/admin/login`,
   editorLogin: `${API_PREFIX}/editor/login`,
   editorProfile: `${API_PREFIX}/editor/me`,
@@ -33,7 +36,10 @@ export const API_ENDPOINTS = Object.freeze({
   editorProject: (id) => `${API_PREFIX}/editor/projects/${id}`,
   editorProjectStatus: (id) => `${API_PREFIX}/editor/projects/${id}/status`,
   editorProjectDelivery: (id) => `${API_PREFIX}/editor/projects/${id}/delivery`,
+  editorDelivery: `${API_PREFIX}/editor/delivery`,
   adminStats: `${API_PREFIX}/admin/stats`,
+  adminPayments: `${API_PREFIX}/admin/payments`,
+  adminPaymentVerify: `${API_PREFIX}/admin/payments/verify`,
   adminReports: `${API_PREFIX}/admin/reports`,
   adminOperations: `${API_PREFIX}/admin/operations`,
   adminWorkload: `${API_PREFIX}/admin/workload`,
@@ -74,6 +80,8 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const isUserRequest = config.url === API_ENDPOINTS.bookings
+    || config.url === API_ENDPOINTS.paymentNotify
+    || config.url?.startsWith(`${API_PREFIX}/client`)
     || config.url === API_ENDPOINTS.authLogout
     || config.url === API_ENDPOINTS.authMe
     || config.url?.startsWith(`${API_PREFIX}/user`);
@@ -103,7 +111,9 @@ api.interceptors.response.use(
       if (error.config?.url?.startsWith(`${API_PREFIX}/super-admin`)) localStorage.removeItem('nerdyfren_super_admin_token');
       if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) localStorage.removeItem('nerdyfren_editor_token');
       if (
-        error.config?.url === API_ENDPOINTS.authLogout
+        error.config?.url === API_ENDPOINTS.paymentNotify
+        || error.config?.url?.startsWith(`${API_PREFIX}/client`)
+        || error.config?.url === API_ENDPOINTS.authLogout
         || error.config?.url === API_ENDPOINTS.authMe
         || error.config?.url?.startsWith(`${API_PREFIX}/user`)
       ) localStorage.removeItem('nerdyfren_user_token');
@@ -141,6 +151,15 @@ export const bookingsApi = {
   track: (token) => api.get(API_ENDPOINTS.bookingTracking(token)).then((r) => expectObject(r.data, 'tracking')),
 };
 
+export const paymentsApi = {
+  notify: (data) => api.post(API_ENDPOINTS.paymentNotify, data).then((r) => expectObject(r.data, 'payment notification')),
+};
+
+export const clientApi = {
+  approve: (data) => api.post(API_ENDPOINTS.clientApprove, data).then((r) => expectObject(r.data, 'delivery approval')),
+  requestRevision: (data) => api.post(API_ENDPOINTS.clientRevision, data).then((r) => expectObject(r.data, 'revision request')),
+};
+
 export const applicationsApi = {
   create: (data) => api.post(API_ENDPOINTS.applications, data).then((r) => expectObject(r.data, 'application')),
 };
@@ -165,11 +184,14 @@ export const editorApi = {
   project: (id) => api.get(API_ENDPOINTS.editorProject(id)).then((r) => r.data),
   updateStatus: (id, status) => api.patch(API_ENDPOINTS.editorProjectStatus(id), { status }).then((r) => r.data),
   submitDelivery: (id, data) => api.post(API_ENDPOINTS.editorProjectDelivery(id), data).then((r) => r.data),
+  submitFinalDelivery: (data) => api.post(API_ENDPOINTS.editorDelivery, data).then((r) => r.data),
 };
 
 export const adminApi = {
   login: (data) => api.post(API_ENDPOINTS.adminLogin, data).then((r) => r.data),
   stats: () => api.get(API_ENDPOINTS.adminStats).then((r) => r.data),
+  payments: () => api.get(API_ENDPOINTS.adminPayments).then((r) => expectArray(r.data, 'payments')),
+  verifyPayment: (data) => api.post(API_ENDPOINTS.adminPaymentVerify, data).then((r) => r.data),
   reports: (params) => api.get(API_ENDPOINTS.adminReports, { params }).then((r) => r.data),
   operations: (params) => api.get(API_ENDPOINTS.adminOperations, { params }).then((r) => r.data),
   workload: (params) => api.get(API_ENDPOINTS.adminWorkload, { params }).then((r) => r.data),

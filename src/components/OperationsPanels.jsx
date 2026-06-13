@@ -2,6 +2,7 @@ import { Download, Filter, LoaderCircle, Plus, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi, getApiError, superAdminApi } from '../lib/api';
+import { downloadRowsCsv } from '../lib/csv';
 import { formatDateTime, formatMoney, humanize, serviceMeta } from '../lib/format';
 import StatusBadge from './StatusBadge';
 import { ErrorState, LoadingState } from './PageState';
@@ -120,7 +121,7 @@ export function AuditPanel() {
   return <div className="space-y-5"><div className="panel grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">{Object.entries(filters).map(([key, value]) => <label key={key}><span className="label">{humanize(key)}</span><input type={key.startsWith('date_') ? 'date' : 'text'} className="input" value={value} onChange={(event) => setFilters({ ...filters, [key]: event.target.value })} /></label>)}</div><div className="panel overflow-x-auto"><table className="w-full min-w-[1000px] text-left text-sm"><thead className="text-xs text-slate-600"><tr>{['Timestamp', 'Actor', 'Role', 'Action', 'Entity', 'Details'].map((item) => <th key={item} className="px-5 py-4">{item}</th>)}</tr></thead><tbody className="divide-y divide-white/[0.06]">{data.map((item) => <tr key={item.id}><td className="px-5 py-4 text-xs">{formatDateTime(item.created_at)}</td><td className="px-5 py-4">{item.actor_name}</td><td className="px-5 py-4">{item.actor_role}</td><td className="px-5 py-4 text-violet-300">{humanize(item.action)}</td><td className="px-5 py-4">{item.entity_type} {item.entity_id || ''}</td><td className="max-w-sm truncate px-5 py-4 text-xs text-slate-500">{item.details ? JSON.stringify(item.details) : '-'}</td></tr>)}</tbody></table></div></div>;
 }
 
-export function ExportPanel({ isSuperAdmin }) {
+export function ExportPanel({ isSuperAdmin, bookings = [], payments = [] }) {
   const [busy, setBusy] = useState('');
   const download = async (type) => {
     setBusy(type);
@@ -133,5 +134,60 @@ export function ExportPanel({ isSuperAdmin }) {
     } finally { setBusy(''); }
   };
   const types = ['bookings', 'reports', 'leads', 'workload', ...(isSuperAdmin ? ['audit'] : [])];
-  return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{types.map((type) => <div key={type} className="panel p-6"><Download className="text-violet-400" size={20} /><h3 className="mt-5 text-lg font-semibold capitalize">{type} CSV</h3><p className="mt-2 text-sm text-slate-500">Export the current operational dataset for offline analysis.</p><button disabled={!!busy} onClick={() => download(type)} className="btn-secondary mt-5">{busy === type ? <LoaderCircle className="animate-spin" size={15} /> : <Download size={15} />} Download CSV</button></div>)}</div>;
+  const localExports = [
+    {
+      type: 'payments',
+      label: 'Payments CSV',
+      rows: bookings.map((booking) => ({
+        booking_id: booking.id,
+        booking_reference: booking.booking_ref,
+        payment_reference: booking.payment_reference || '',
+        amount: booking.payment_amount ?? booking.amount,
+        status: booking.payment_status,
+        payment_date: booking.payment_date || '',
+      })),
+    },
+    {
+      type: 'revenue',
+      label: 'Revenue CSV',
+      rows: bookings.filter((booking) => booking.payment_status === 'paid').map((booking) => ({
+        booking_id: booking.id,
+        booking_reference: booking.booking_ref,
+        client: booking.client_name,
+        amount: booking.payment_amount ?? booking.amount,
+        payment_reference: booking.payment_reference || '',
+        payment_date: booking.payment_date || '',
+      })),
+    },
+    {
+      type: 'completed-projects',
+      label: 'Completed Projects CSV',
+      rows: bookings.filter((booking) => booking.status === 'completed').map((booking) => ({
+        booking_id: booking.id,
+        booking_reference: booking.booking_ref,
+        client: booking.client_name,
+        service: booking.service_type,
+        amount: booking.amount,
+        completed_at: booking.completed_at || '',
+        revision_count: booking.revision_count || 0,
+      })),
+    },
+  ];
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {localExports.map(({ type, label, rows }) => (
+        <div key={type} className="panel p-6">
+          <Download className="text-cyan-400" size={20} />
+          <h3 className="mt-5 text-lg font-semibold">{label}</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Built from the current dashboard data. {type === 'payments' ? `${payments.length} notifications awaiting verification.` : `${rows.length} records available.`}
+          </p>
+          <button disabled={!rows.length} onClick={() => downloadRowsCsv(`nerdyfren-${type}.csv`, rows)} className="btn-secondary mt-5">
+            <Download size={15} /> Download CSV
+          </button>
+        </div>
+      ))}
+      {types.map((type) => <div key={type} className="panel p-6"><Download className="text-violet-400" size={20} /><h3 className="mt-5 text-lg font-semibold capitalize">{type} CSV</h3><p className="mt-2 text-sm text-slate-500">Export the current operational dataset for offline analysis.</p><button disabled={!!busy} onClick={() => download(type)} className="btn-secondary mt-5">{busy === type ? <LoaderCircle className="animate-spin" size={15} /> : <Download size={15} />} Download CSV</button></div>)}
+    </div>
+  );
 }

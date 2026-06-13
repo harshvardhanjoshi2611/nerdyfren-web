@@ -98,7 +98,7 @@ export default function BookingPage() {
         <div className="max-w-2xl">
           <span className="eyebrow">Project brief</span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">Tell us what you’re making.</h1>
-          <p className="mt-4 text-slate-400">You’ll receive a secure tracking link after submission. Payment is confirmed separately by our team.</p>
+          <p className="mt-4 text-slate-400">You will receive a clear Booking ID, payment instructions, and a secure tracking link after submission.</p>
           <form onSubmit={submit} className="mt-10 space-y-7">
             <div className="grid gap-5 sm:grid-cols-2">
               <label><span className="label">Your name</span><input required name="client_name" value={form.client_name} onChange={update} className="input" placeholder="Alex Morgan" /></label>
@@ -131,7 +131,7 @@ export default function BookingPage() {
             {selectedMeta.revisionCycles > 0 && <p className="mt-3 text-xs font-medium text-violet-300">{selectedMeta.revisionCycles} Revision Cycles</p>}
             <div className="my-6 h-px bg-white/[0.07]" />
             <div className="flex items-center justify-between"><span className="text-sm text-slate-400">Project total</span><span className="text-2xl font-bold">{selected ? formatMoney(selected.amount) : '-'}</span></div>
-            <p className="mt-2 text-xs text-slate-600">Payment is collected manually after the brief is reviewed.</p>
+            <p className="mt-2 text-xs text-slate-600">Payment instructions and the notification form appear after booking.</p>
             <div className="mt-6 rounded-xl bg-white/[0.03] p-4 text-xs leading-5 text-slate-500"><ShieldCheck className="mb-3 text-emerald-400" size={19} />Your tracking token is private. Keep it safe and only share it with people who should see project status.</div>
           </div>
         </aside>

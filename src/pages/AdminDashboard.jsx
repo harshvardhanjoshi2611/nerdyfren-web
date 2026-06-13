@@ -1,7 +1,19 @@
-import { BadgeIndianRupee, BriefcaseBusiness, Check, ExternalLink, LayoutDashboard, LoaderCircle, RefreshCw, UsersRound } from 'lucide-react';
+import {
+  BadgeIndianRupee,
+  BriefcaseBusiness,
+  CalendarRange,
+  Check,
+  CircleDollarSign,
+  CircleGauge,
+  ExternalLink,
+  LayoutDashboard,
+  LoaderCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { useState } from 'react';
 import DashboardShell from '../components/DashboardShell';
 import { ErrorState, LoadingState } from '../components/PageState';
+import PaymentsPanel from '../components/PaymentsPanel';
 import StatusBadge from '../components/StatusBadge';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi, getApiError } from '../lib/api';
@@ -17,15 +29,16 @@ export default function AdminDashboard() {
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
   const isSuperAdmin = Boolean(localStorage.getItem('nerdyfren_super_admin_token'));
-  const tabs = ['Reports', 'Operations', 'Projects', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
+  const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
   const { data, loading, error, reload } = useFetch(async () => {
-    const [stats, bookings, editors, services] = await Promise.all([
+    const [stats, bookings, payments, editors, services] = await Promise.all([
       adminApi.stats(),
       adminApi.bookings(),
+      adminApi.payments(),
       adminApi.editors(),
       servicesApi.list(),
     ]);
-    return { stats, bookings, editors, services };
+    return { stats, bookings, payments, editors, services };
   }, []);
 
   const action = async (key, work, success) => {
@@ -57,17 +70,32 @@ export default function AdminDashboard() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              [BriefcaseBusiness, 'Total projects', data.stats.total_bookings],
-              [BadgeIndianRupee, 'Paid revenue', formatMoney(data.stats.total_revenue)],
-              [UsersRound, 'Active Nerds', data.stats.active_editors],
-              [BriefcaseBusiness, 'Unassigned', data.stats.unassigned],
-            ].map(([Icon, label, value]) => (
+              [CircleDollarSign, 'Total Revenue', formatMoney(data.stats.total_revenue), 'text-emerald-400'],
+              [CalendarRange, 'Revenue This Month', formatMoney(data.stats.revenue_this_month), 'text-cyan-400'],
+              [BadgeIndianRupee, 'Pending Payments', data.stats.pending_payments, 'text-amber-400'],
+              [BriefcaseBusiness, 'Completed Orders', data.stats.completed_orders, 'text-violet-400'],
+            ].map(([Icon, label, value, tone]) => (
               <div key={label} className="panel p-5">
-                <Icon className="text-violet-400" size={18} />
+                <Icon className={tone} size={18} />
                 <p className="mt-5 text-2xl font-bold">{value}</p>
                 <p className="mt-1 text-xs text-slate-500">{label}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <MetricBar
+              label="Monthly revenue contribution"
+              value={Number(data.stats.revenue_this_month || 0)}
+              total={Number(data.stats.total_revenue || 0)}
+              detail={`${formatMoney(data.stats.revenue_this_month)} this month`}
+            />
+            <MetricBar
+              label="Order completion"
+              value={Number(data.stats.completed_orders || 0)}
+              total={Number(data.stats.total_bookings || data.bookings.length || 0)}
+              detail={`${data.stats.completed_orders || 0} of ${data.stats.total_bookings || data.bookings.length || 0} orders`}
+            />
           </div>
 
           {notice && <div className={`mt-6 rounded-xl border p-3 text-sm ${notice.toLowerCase().includes('could not') || notice.toLowerCase().includes('required') || notice.toLowerCase().includes('invalid') ? 'border-red-400/20 bg-red-500/10 text-red-300' : 'border-violet-400/20 bg-violet-500/10 text-violet-200'}`}>{notice}</div>}
@@ -76,7 +104,11 @@ export default function AdminDashboard() {
             {tabs.map((item) => (
               <button key={item} onClick={() => setTab(item)} className={`border-b-2 px-4 pb-3 text-sm font-medium transition ${tab === item ? 'border-violet-400 text-white' : 'border-transparent text-slate-600 hover:text-slate-300'}`}>
                 {item}
-                {(item === 'Projects' || item === 'Editors') && <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px]">{item === 'Projects' ? data.bookings.length : data.editors.length}</span>}
+                {['Projects', 'Editors', 'Payments'].includes(item) && (
+                  <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px]">
+                    {item === 'Projects' ? data.bookings.length : item === 'Editors' ? data.editors.length : data.payments.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -84,16 +116,36 @@ export default function AdminDashboard() {
           <div className="mt-5">
             {tab === 'Reports' && <ReportsPanel editors={data.editors} services={data.services} />}
             {tab === 'Operations' && <OperationsPanel editors={data.editors} services={data.services} />}
+            {tab === 'Payments' && <PaymentsPanel pending={data.payments} bookings={data.bookings} busy={busy} action={action} />}
             {tab === 'Projects' && <ProjectsTable items={data.bookings} editors={data.editors} busy={busy} action={action} />}
             {tab === 'Workload' && <WorkloadPanel editors={data.editors} services={data.services} />}
             {tab === 'Leads' && <LeadsPanel services={data.services} />}
             {tab === 'Editors' && <EditorsTable items={data.editors} busy={busy} action={action} />}
-            {tab === 'Exports' && <ExportPanel isSuperAdmin={isSuperAdmin} />}
+            {tab === 'Exports' && <ExportPanel isSuperAdmin={isSuperAdmin} bookings={data.bookings} payments={data.payments} />}
             {tab === 'Audit Trail' && <AuditPanel />}
           </div>
         </div>
       )}
     </DashboardShell>
+  );
+}
+
+function MetricBar({ label, value, total, detail }) {
+  const percentage = total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0;
+  return (
+    <div className="panel p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="mt-1 text-xs text-slate-600">{detail}</p>
+        </div>
+        <CircleGauge size={19} className="text-violet-400" />
+      </div>
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400" style={{ width: `${percentage}%` }} />
+      </div>
+      <p className="mt-2 text-right text-xs text-slate-600">{percentage}%</p>
+    </div>
   );
 }
 
