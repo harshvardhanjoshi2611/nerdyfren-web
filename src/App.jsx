@@ -16,16 +16,23 @@ import UserDashboard from './pages/UserDashboard';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage';
+import LegalPage from './pages/LegalPage';
+import Seo from './components/Seo';
 
 export default function App() {
   return (
     <>
+      <Seo />
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/book" element={<BookingPage />} />
+      <Route path="/booking" element={<BookingPage />} />
       <Route path="/booking/success" element={<BookingSuccessPage />} />
       <Route path="/track" element={<TrackingPage />} />
+      <Route path="/privacy" element={<LegalPage type="privacy" />} />
+      <Route path="/terms" element={<LegalPage type="terms" />} />
+      <Route path="/refund" element={<LegalPage type="refund" />} />
       <Route path="/signin" element={<UserAuthPage mode="signin" />} />
       <Route path="/signup" element={<UserAuthPage mode="signup" />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />

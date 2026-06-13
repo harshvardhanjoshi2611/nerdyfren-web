@@ -17,9 +17,13 @@ Production frontend for the NerdyFren managed creator marketplace.
 |---|---|
 | `/` | Landing page |
 | `/services` | Live service catalog and pricing |
-| `/book` | Creator booking form |
+| `/booking` | Canonical creator booking form |
+| `/book` | Backward-compatible booking alias |
 | `/booking/success` | Booking confirmation and private tracking token |
 | `/track` | Privacy-safe booking tracking |
+| `/privacy` | Public MVP privacy placeholder |
+| `/terms` | Public MVP terms placeholder |
+| `/refund` | Public MVP refund and dispute placeholder |
 | `/editor/login` | Editor login |
 | `/editor` | Protected editor dashboard |
 | `/editor/projects/:id` | Protected project details and status updates |
@@ -39,14 +43,18 @@ Set the local public configuration in `.env`:
 ```env
 VITE_API_URL=http://localhost:3001
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+VITE_SITE_URL=http://localhost:5173
+VITE_OG_IMAGE_URL=
+VITE_SUPPORT_EMAIL=support@your-domain.example
 VITE_MOTHERSHIP_URL=https://your-mothership.example
 VITE_MERCH_URL=https://your-merch-store.example
 VITE_INSTAGRAM_URL=https://instagram.com/your-profile
 ```
 
-The API origin is required in production. WhatsApp and other public destinations
-use safe disabled or hidden states when absent. Configuration warnings are
-logged only during development.
+The API origin is required in production. `VITE_SITE_URL` controls canonical
+URLs and should match the final custom domain. WhatsApp and other public
+destinations use safe disabled or hidden states when absent. Configuration
+warnings are logged only during development.
 
 The backend must include the frontend origin in `ALLOWED_ORIGINS`:
 
@@ -75,6 +83,8 @@ npm run preview
 ```env
 VITE_API_URL=https://your-api.up.railway.app
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+VITE_SITE_URL=https://your-domain.example
+VITE_SUPPORT_EMAIL=support@your-domain.example
 ```
 
 6. Deploy.
@@ -88,6 +98,11 @@ ALLOWED_ORIGINS=https://your-domain.vercel.app
 For preview deployments, either add the specific preview origin to the backend allowlist or use a stable custom staging domain.
 
 The included `vercel.json` sends client-side routes back to `index.html`, so direct visits to dashboard and tracking routes work.
+
+The `public` directory includes the launch favicon, social-preview placeholder,
+`robots.txt`, and `sitemap.xml`. The sitemap currently uses the expected
+NerdyFren canonical hostname; update its URLs and the robots sitemap line if the
+purchased domain differs.
 
 ### Vercel CLI
 

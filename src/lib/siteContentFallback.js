@@ -9,7 +9,7 @@ export const fallbackSiteContent = {
       title: 'Make content that earns attention.',
       subtitle: 'Get matched with vetted editors who understand internet culture, your voice, and the pace you need to publish.',
       cta_text: 'Start your project',
-      cta_url: '/book',
+      cta_url: '/booking',
     },
     human_editors: {
       eyebrow: 'People, not prompts',
@@ -22,7 +22,7 @@ export const fallbackSiteContent = {
       subtitle: 'Your Nerdy Fren turns raw footage into ready-to-post content.',
       steps: [
         { title: 'Start Project', body: 'Choose a service and share what you are creating.' },
-        { title: 'Share Brief & Raw Footage', body: 'Send source files, references, context, and goals.' },
+        { title: 'Share Brief & Raw Footage', body: 'Share authorized source and reference links, context, and goals.' },
         { title: 'Nerd Assigned', body: 'We match your project with a specialist editor.' },
         { title: 'Draft Delivered', body: 'Your first polished cut arrives in your project workspace.' },
         { title: 'Feedback Rounds', body: 'Share revision notes and review each updated delivery.' },

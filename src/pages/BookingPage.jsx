@@ -97,7 +97,7 @@ export default function BookingPage() {
       <main className="container-shell grid gap-10 pb-20 pt-8 lg:grid-cols-[1fr_380px]">
         <div className="max-w-2xl">
           <span className="eyebrow">Project brief</span>
-          <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">Tell us what you’re making.</h1>
+          <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">Tell us what you're making.</h1>
           <p className="mt-4 text-slate-400">You will receive a clear Booking ID, payment instructions, and a secure tracking link after submission.</p>
           <form onSubmit={submit} className="mt-10 space-y-7">
             <div className="grid gap-5 sm:grid-cols-2">
@@ -116,9 +116,13 @@ export default function BookingPage() {
               </div>
             </fieldset>
             <label><span className="label">What should we create?</span><textarea required name="brief" value={form.brief} onChange={update} className="input min-h-36 resize-y" placeholder="Share the goal, audience, desired tone, raw footage and anything that would help your specialist nail the first cut." /></label>
-            {needsAudioVideo && <label><span className="label">Reference Audios</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceAudioUrl" value={form.referenceAudioUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
-            {needsAudioVideo && <label><span className="label">Reference Videos</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceVideoUrl" value={form.referenceVideoUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
-            <label><span className="label">Raw Footage Drive Link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="rawFootageUrl" value={form.rawFootageUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div></label>
+            {needsAudioVideo && <label><span className="label">Reference audio link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceAudioUrl" value={form.referenceAudioUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            {needsAudioVideo && <label><span className="label">Reference video link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceVideoUrl" value={form.referenceVideoUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            <label>
+              <span className="label">Raw file link (Google Drive)</span>
+              <div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="rawFootageUrl" value={form.rawFootageUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div>
+              <span className="mt-2 block text-xs leading-5 text-slate-600">Share an authorized Drive folder or file link. NerdyFren stores the link and project status, not a duplicate upload.</span>
+            </label>
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading || !selected} className="btn-primary w-full sm:w-auto">{loading ? <LoaderCircle className="animate-spin" size={17} /> : <>Submit project <ArrowRight size={17} /></>}</button>
           </form>

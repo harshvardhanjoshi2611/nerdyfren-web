@@ -20,6 +20,7 @@ import { adminApi, getApiError } from '../lib/api';
 import { formatDateTime, formatMoney, getProjectName, humanize, serviceMeta } from '../lib/format';
 import { AuditPanel, ExportPanel, LeadsPanel, OperationsPanel, ReportsPanel, WorkloadPanel } from '../components/OperationsPanels';
 import { servicesApi } from '../lib/api';
+import { getProjectLinkLabel } from '../lib/projectLinks';
 
 const links = [{ label: 'Operations', to: '/admin', icon: LayoutDashboard }];
 const projectStatuses = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed', 'cancelled'];
@@ -181,7 +182,20 @@ function ProjectsTable({ items, editors, busy, action }) {
                 <td className="px-4 py-5">
                   <p className="font-semibold text-white">{getProjectName(booking)}</p>
                   <p className="mt-1 font-mono text-[10px] text-slate-600">{booking.booking_ref}</p>
-                  {booking.delivery && <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs text-cyan-300">View delivery <ExternalLink size={12} /></a>}
+                  {booking.delivery && <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs text-cyan-300">View delivery link <ExternalLink size={12} /></a>}
+                  {booking.ref_links?.length > 0 && (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs text-slate-500">Project links ({booking.ref_links.length})</summary>
+                      <div className="mt-2 space-y-1.5">
+                        {booking.ref_links.map((item) => (
+                          <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="flex max-w-64 items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-3 py-2 text-xs text-cyan-300">
+                            <span className="truncate">{getProjectLinkLabel(item.label)}</span>
+                            <ExternalLink size={11} className="shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </td>
                 <td className="px-4 py-5">
                   <p className="text-slate-200">{booking.client_name}</p>

@@ -15,6 +15,7 @@ import StatusBadge from '../components/StatusBadge';
 import { useFetch } from '../hooks/useFetch';
 import { editorApi, getApiError } from '../lib/api';
 import { formatDate, formatDateTime, humanize, serviceMeta } from '../lib/format';
+import { getProjectLinkLabel } from '../lib/projectLinks';
 
 const links = [{ label: 'Overview', to: '/editor/dashboard', icon: LayoutDashboard }];
 const allowed = {
@@ -55,7 +56,7 @@ export default function ProjectDetailsPage() {
             <div>
               <div className="flex items-center gap-3"><span className="text-xs text-slate-600">{project.booking_ref}</span><StatusBadge status={project.status} /></div>
               <h1 className="mt-3 text-3xl font-bold">{serviceMeta[project.service_type]?.name || humanize(project.service_type)}</h1>
-              <p className="mt-2 text-sm text-slate-500">For {project.client_name} · Assigned {formatDate(project.assigned_at)}</p>
+              <p className="mt-2 text-sm text-slate-500">For {project.client_name} - Assigned {formatDate(project.assigned_at)}</p>
             </div>
             {deliveryStatuses.includes(project.status) && (
               <button type="button" onClick={() => setDeliveryOpen(true)} className="btn-primary">
@@ -71,13 +72,13 @@ export default function ProjectDetailsPage() {
                 <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-300">{project.brief || 'No written brief was provided.'}</p>
               </section>
               <section className="panel p-6">
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-600">Attachments and references</p>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-600">Project links</p>
                 <div className="mt-5 space-y-2">
                   {project.ref_links?.length ? project.ref_links.map((item) => (
                     <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm text-slate-300 hover:border-cyan-400/30">
-                      <span>{item.label || 'Reference link'}</span><ExternalLink size={15} />
+                      <span>{getProjectLinkLabel(item.label)}</span><ExternalLink size={15} />
                     </a>
-                  )) : <p className="text-sm text-slate-600">No reference links attached.</p>}
+                  )) : <p className="text-sm text-slate-600">No source or reference links were shared.</p>}
                 </div>
               </section>
 
@@ -92,7 +93,7 @@ export default function ProjectDetailsPage() {
                           <StatusBadge status={revision.status} />
                         </div>
                         <p className="mt-2 text-sm leading-6 text-slate-300">{revision.notes || revision.message}</p>
-                        <p className="mt-2 text-xs text-slate-600">{formatDateTime(revision.requested_at)} · {revision.resolved_at ? 'Resolved' : 'Action needed'}</p>
+                        <p className="mt-2 text-xs text-slate-600">{formatDateTime(revision.requested_at)} - {revision.resolved_at ? 'Resolved' : 'Action needed'}</p>
                       </div>
                     ))}
                   </div>
@@ -105,7 +106,7 @@ export default function ProjectDetailsPage() {
                   <div className="mt-5 space-y-3">
                     {deliveries.map((item) => (
                       <a key={item.id} href={item.delivery_link} target="_blank" rel="noreferrer" className="block rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 hover:border-cyan-400/30">
-                        <div className="flex items-center justify-between"><span className="text-sm font-medium text-cyan-300">Open delivery</span><ExternalLink size={15} /></div>
+                        <div className="flex items-center justify-between"><span className="text-sm font-medium text-cyan-300">Open delivery link</span><ExternalLink size={15} /></div>
                         {item.delivery_note && <p className="mt-2 text-sm text-slate-400">{item.delivery_note}</p>}
                         <p className="mt-2 text-xs text-slate-600">{formatDateTime(item.submitted_at)}</p>
                       </a>
@@ -127,7 +128,7 @@ export default function ProjectDetailsPage() {
                   {!allowed[project.status]?.length && (
                     <p className="rounded-xl bg-white/[0.03] p-4 text-sm leading-6 text-slate-500">
                       {deliveryStatuses.includes(project.status)
-                        ? 'Submit a delivery when the final files are ready.'
+                        ? 'Submit the authorized delivery link when the review files are ready.'
                         : 'No manual editor transition is available at this stage.'}
                     </p>
                   )}

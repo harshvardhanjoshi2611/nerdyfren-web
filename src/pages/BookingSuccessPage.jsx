@@ -66,7 +66,7 @@ export default function BookingSuccessPage() {
         <div className="panel max-w-md p-8 text-center">
           <h1 className="text-xl font-semibold">No recent booking found</h1>
           <p className="mt-2 text-sm text-slate-500">Start a project to receive your Booking ID.</p>
-          <Link to="/book" className="btn-primary mt-6">Start a project</Link>
+          <Link to="/booking" className="btn-primary mt-6">Start a project</Link>
         </div>
       </div>
     );
@@ -218,7 +218,7 @@ export default function BookingSuccessPage() {
                 />
               </label>
               <label>
-                <span className="label">Screenshot URL <span className="text-slate-600">(optional)</span></span>
+                <span className="label">Payment proof link <span className="text-slate-600">(optional)</span></span>
                 <input
                   type="url"
                   className="input"
@@ -226,7 +226,7 @@ export default function BookingSuccessPage() {
                   onChange={(event) => setPayment({ ...payment, screenshot_url: event.target.value })}
                   placeholder="https://drive.google.com/..."
                 />
-                <span className="mt-2 block text-xs text-slate-600">Saved in this browser and available to share with the coordinator after submission.</span>
+                <span className="mt-2 block text-xs text-slate-600">Paste an authorized Drive or image link. It stays in this browser and can be shared with the coordinator after submission.</span>
               </label>
               {paymentError && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{paymentError}</p>}
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

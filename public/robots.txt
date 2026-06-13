@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /editor
+Disallow: /super-admin
+Disallow: /superadmin
+Disallow: /dashboard
+Disallow: /booking/success
+Disallow: /reset-password
+
+Sitemap: https://nerdyfren.com/sitemap.xml

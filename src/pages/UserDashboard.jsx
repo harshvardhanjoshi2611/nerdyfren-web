@@ -7,6 +7,7 @@ import StatusBadge from '../components/StatusBadge';
 import useAuth from '../hooks/useAuth';
 import { getApiError, userApi } from '../lib/api';
 import { formatDate, getProjectName, serviceMeta } from '../lib/format';
+import { getProjectLinkLabel } from '../lib/projectLinks';
 
 export default function UserDashboard() {
   const { user, endSession } = useAuth();
@@ -50,7 +51,7 @@ export default function UserDashboard() {
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-3">
-            <Link to="/book" className="btn-primary !px-4 !py-2"><Plus size={16} /> New project</Link>
+            <Link to="/booking" className="btn-primary !px-4 !py-2"><Plus size={16} /> New project</Link>
             <button onClick={endSession} className="rounded-lg p-2.5 text-slate-500 transition hover:bg-white/5 hover:text-white" aria-label="Sign out"><LogOut size={18} /></button>
           </div>
         </div>
@@ -92,7 +93,7 @@ export default function UserDashboard() {
               <FolderKanban className="mx-auto text-slate-600" />
               <h3 className="mt-4 font-semibold">No account bookings yet</h3>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">New projects created while signed in will appear here. Existing guest bookings remain available through their private tracking links.</p>
-              <Link to="/book" className="btn-primary mt-6">Start a project</Link>
+              <Link to="/booking" className="btn-primary mt-6">Start a project</Link>
             </div>
           )}
           {!loading && !error && bookings.length > 0 && (
@@ -107,6 +108,19 @@ export default function UserDashboard() {
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Date Created</p><p className="mt-2 text-sm text-slate-300">{formatDate(booking.created_at)}</p></div>
                     </div>
                   </div>
+                  {booking.ref_links?.length > 0 && (
+                    <details className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                      <summary className="cursor-pointer text-sm font-medium text-slate-300">Project links ({booking.ref_links.length})</summary>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {booking.ref_links.map((item) => (
+                          <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-2 text-xs text-cyan-300">
+                            <span className="truncate">{getProjectLinkLabel(item.label)}</span>
+                            <ExternalLink size={12} className="shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                   {booking.delivery && (
                     <div className="mt-5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -114,7 +128,7 @@ export default function UserDashboard() {
                           <p className="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300">Delivery ready</p>
                           {booking.delivery.delivery_note && <p className="mt-2 text-sm text-slate-400">{booking.delivery.delivery_note}</p>}
                         </div>
-                        <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="btn-primary !px-4 !py-2.5">Open delivery <ExternalLink size={15} /></a>
+                        <a href={booking.delivery.delivery_link} target="_blank" rel="noreferrer" className="btn-primary !px-4 !py-2.5">Open delivery link <ExternalLink size={15} /></a>
                       </div>
                     </div>
                   )}

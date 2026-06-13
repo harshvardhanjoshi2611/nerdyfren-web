@@ -6,6 +6,7 @@ const visiblePaths = new Set([
   '/',
   '/services',
   '/book',
+  '/booking',
   '/booking/success',
   '/dashboard',
   '/track',

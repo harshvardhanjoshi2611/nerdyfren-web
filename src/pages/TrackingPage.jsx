@@ -158,7 +158,7 @@ export default function TrackingPage() {
           <Logo />
           <nav className="flex items-center gap-2 sm:gap-6">
             <Link to="/" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Home</Link>
-            <Link to="/book" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Start Project</Link>
+            <Link to="/booking" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Start Project</Link>
             <Link to="/track" className="text-xs font-medium text-white sm:text-sm">Track Project</Link>
           </nav>
         </div>
@@ -198,7 +198,7 @@ export default function TrackingPage() {
                     <p className="mt-3 text-xs text-slate-600">{formatDateTime(delivery.submitted_at || booking.delivery_date)}</p>
                     {(delivery.delivery_note || booking.delivery_notes) && <p className="mt-3 text-sm leading-6 text-slate-400">{delivery.delivery_note || booking.delivery_notes}</p>}
                     <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                      <a href={delivery.delivery_link || booking.delivery_link} target="_blank" rel="noreferrer" className="btn-primary">Open delivery <ExternalLink size={15} /></a>
+                      <a href={delivery.delivery_link || booking.delivery_link} target="_blank" rel="noreferrer" className="btn-primary">Open delivery link <ExternalLink size={15} /></a>
                       {canApprove && (
                         <button disabled={!!action} onClick={approve} className="btn-secondary">
                           {action === 'approve' ? <LoaderCircle className="animate-spin" size={15} /> : <ThumbsUp size={15} />}
@@ -263,7 +263,7 @@ export default function TrackingPage() {
             </div>
           )}
 
-          {!booking && !error && <div className="mx-auto mt-12 max-w-lg text-center text-sm text-slate-600">No Tracking ID yet? <Link to="/book" className="inline-flex items-center gap-1 text-violet-400 hover:text-violet-300">Start a project <ArrowRight size={14} /></Link></div>}
+          {!booking && !error && <div className="mx-auto mt-12 max-w-lg text-center text-sm text-slate-600">No Tracking ID yet? <Link to="/booking" className="inline-flex items-center gap-1 text-violet-400 hover:text-violet-300">Start a project <ArrowRight size={14} /></Link></div>}
         </div>
       </main>
 

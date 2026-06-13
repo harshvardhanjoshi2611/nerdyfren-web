@@ -31,7 +31,7 @@ export default function DeliveryModal({ project, onClose, onSubmitted }) {
     <Modal title="Submit final delivery" eyebrow={project.booking_ref} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         <label>
-          <span className="label">Delivery URL</span>
+          <span className="label">Delivery link</span>
           <input
             required
             type="url"
@@ -40,6 +40,7 @@ export default function DeliveryModal({ project, onClose, onSubmitted }) {
             onChange={(event) => setForm({ ...form, delivery_url: event.target.value })}
             placeholder="https://drive.google.com/..."
           />
+          <span className="mt-2 block text-xs leading-5 text-slate-600">Use the authorized client delivery folder or review file. Do not use a public link unless the project requires it.</span>
         </label>
         <label>
           <span className="label">Delivery notes</span>

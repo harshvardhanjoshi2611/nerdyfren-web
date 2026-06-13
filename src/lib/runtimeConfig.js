@@ -41,14 +41,26 @@ function warn(message) {
 const configuredApiOrigin = normalizeHttpOrigin(import.meta.env.VITE_API_URL);
 const apiOrigin = configuredApiOrigin
   || (isDevelopment ? developmentApiOrigin : currentOrigin);
+const configuredSiteUrl = normalizeHttpOrigin(import.meta.env.VITE_SITE_URL);
+const siteUrl = configuredSiteUrl || currentOrigin;
 const whatsappNumber = clean(import.meta.env.VITE_WHATSAPP_NUMBER).replace(/\D/g, '');
 const validWhatsAppNumber = /^\d{8,15}$/.test(whatsappNumber) ? whatsappNumber : '';
+const configuredSupportEmail = clean(import.meta.env.VITE_SUPPORT_EMAIL).toLowerCase();
+const supportEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredSupportEmail)
+  ? configuredSupportEmail
+  : 'support@nerdyfren.com';
 
 if (!configuredApiOrigin) {
   warn(`VITE_API_URL is missing or invalid; using ${apiOrigin}.`);
 }
 if (!validWhatsAppNumber) {
   warn('VITE_WHATSAPP_NUMBER is missing or invalid; WhatsApp actions will be disabled.');
+}
+if (!configuredSiteUrl) {
+  warn(`VITE_SITE_URL is missing or invalid; using ${siteUrl} for canonical links.`);
+}
+if (configuredSupportEmail && configuredSupportEmail !== supportEmail) {
+  warn('VITE_SUPPORT_EMAIL is invalid; using the public support fallback.');
 }
 
 export const runtimeConfig = Object.freeze({
@@ -57,10 +69,13 @@ export const runtimeConfig = Object.freeze({
     ? 'VITE_API_URL is missing or invalid. Configure the production API origin and redeploy.'
     : '',
   isDevelopment,
+  ogImageUrl: normalizePublicUrl(import.meta.env.VITE_OG_IMAGE_URL, 'VITE_OG_IMAGE_URL'),
   publicLinks: Object.freeze({
     instagram: normalizePublicUrl(import.meta.env.VITE_INSTAGRAM_URL, 'VITE_INSTAGRAM_URL'),
     merch: normalizePublicUrl(import.meta.env.VITE_MERCH_URL, 'VITE_MERCH_URL'),
     mothership: normalizePublicUrl(import.meta.env.VITE_MOTHERSHIP_URL, 'VITE_MOTHERSHIP_URL'),
   }),
+  siteUrl,
+  supportEmail,
   whatsappNumber: validWhatsAppNumber,
 });

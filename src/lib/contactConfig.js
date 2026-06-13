@@ -5,6 +5,7 @@ export const publicContactConfig = Object.freeze({
   instagramUrl: runtimeConfig.publicLinks.instagram,
   mothershipUrl: runtimeConfig.publicLinks.mothership,
   merchUrl: runtimeConfig.publicLinks.merch,
+  supportEmail: runtimeConfig.supportEmail,
 });
 
 export function buildWhatsAppLink(message = '') {

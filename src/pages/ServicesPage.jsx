@@ -26,7 +26,7 @@ export default function ServicesPage() {
           <div className="mx-auto max-w-3xl text-center">
             <span className="eyebrow"><Layers3 size={13} /> Creative services</span>
             <h1 className="mt-6 text-4xl font-extrabold tracking-[-0.045em] sm:text-6xl">Built for the content you need to ship next.</h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">Choose a focused package. We handle the match, creative context and quality control.</p>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">Choose a focused package. Verified human editors handle the creative context while NerdyFren manages the workflow and quality control.</p>
           </div>
           {servicesVisual.services_media_url && <CmsMedia url={servicesVisual.services_media_url} type={servicesVisual.services_media_type} alt="NerdyFren services" className="panel mt-12 aspect-[21/8] w-full rounded-2xl object-cover p-2" />}
           {error && (
@@ -60,7 +60,7 @@ export default function ServicesPage() {
                   </div>
                   {comingSoon
                     ? <button disabled className="btn-secondary mt-7 w-full cursor-not-allowed opacity-60">Booking opens soon</button>
-                    : <Link to={`/book?service=${service.id}`} className="btn-secondary mt-7 w-full group-hover:border-violet-400/30 group-hover:text-white">Book this service <ArrowRight size={16} /></Link>}
+                    : <Link to={`/booking?service=${service.id}`} className="btn-secondary mt-7 w-full group-hover:border-violet-400/30 group-hover:text-white">Book this service <ArrowRight size={16} /></Link>}
                 </article>
               );
             })}

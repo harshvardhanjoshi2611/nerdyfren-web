@@ -35,7 +35,7 @@ export default function Navbar() {
               <Link to="/signup" className="btn-secondary !px-4 !py-2.5">Sign up</Link>
             </>
           )}
-          <Link to="/book" className="btn-primary !px-4 !py-2.5">Start a project</Link>
+          <Link to="/booking" className="btn-primary !px-4 !py-2.5">Start a project</Link>
         </div>
         <button className="rounded-lg p-2 text-slate-300 md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
           {open ? <X size={21} /> : <Menu size={21} />}
@@ -57,7 +57,7 @@ export default function Navbar() {
                 <Link to="/signup" onClick={() => setOpen(false)} className="btn-secondary">Sign up</Link>
               </div>
             )}
-            <Link to="/book" onClick={() => setOpen(false)} className="btn-primary">Start a project</Link>
+            <Link to="/booking" onClick={() => setOpen(false)} className="btn-primary">Start a project</Link>
           </div>
         </div>
       )}
