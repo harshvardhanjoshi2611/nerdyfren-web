@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import AppErrorBoundary from './components/AppErrorBoundary';
+import ConfigurationError from './components/ConfigurationError';
 import { AuthProvider } from './context/AuthContext';
 import { SiteContentProvider } from './context/SiteContentContext';
 import './styles/index.css';
+import { runtimeConfig } from './lib/runtimeConfig';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -13,7 +15,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AppErrorBoundary>
         <AuthProvider>
           <SiteContentProvider>
-            <App />
+            {runtimeConfig.configurationError
+              ? <ConfigurationError message={runtimeConfig.configurationError} />
+              : <App />}
           </SiteContentProvider>
         </AuthProvider>
       </AppErrorBoundary>

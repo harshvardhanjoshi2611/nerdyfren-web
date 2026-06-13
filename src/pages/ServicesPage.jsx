@@ -9,7 +9,12 @@ import { servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
 
 export default function ServicesPage() {
-  const { data: services, loading } = useFetch(servicesApi.list, []);
+  const {
+    data: services,
+    loading,
+    error,
+    reload,
+  } = useFetch(servicesApi.list, []);
   const { content } = useSiteContent();
   const cards = Array.isArray(services) ? services : fallbackServices;
   const servicesVisual = content.homepage?.visuals || {};
@@ -24,6 +29,12 @@ export default function ServicesPage() {
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">Choose a focused package. We handle the match, creative context and quality control.</p>
           </div>
           {servicesVisual.services_media_url && <CmsMedia url={servicesVisual.services_media_url} type={servicesVisual.services_media_type} alt="NerdyFren services" className="panel mt-12 aspect-[21/8] w-full rounded-2xl object-cover p-2" />}
+          {error && (
+            <div className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 rounded-xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+              <span>Live pricing could not be refreshed. Showing the latest built-in service information.</span>
+              <button type="button" onClick={reload} className="btn-secondary !px-3 !py-2">Retry</button>
+            </div>
+          )}
           <div className="mt-16 grid gap-5 md:grid-cols-2">
             {cards.map((service, index) => {
               const meta = serviceMeta[service.id] || { name: service.name || service.id, short: 'A custom creative service.', timeline: 'Custom' };

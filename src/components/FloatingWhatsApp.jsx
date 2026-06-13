@@ -1,6 +1,6 @@
 import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import useSiteContent from '../hooks/useSiteContent';
+import { buildWhatsAppLink } from '../lib/contactConfig';
 
 const visiblePaths = new Set([
   '/',
@@ -13,12 +13,24 @@ const visiblePaths = new Set([
 
 export default function FloatingWhatsApp() {
   const { pathname } = useLocation();
-  const { content } = useSiteContent();
   if (!visiblePaths.has(pathname)) return null;
 
-  const number = (content?.settings?.whatsapp_number || '').replace(/\D/g, '');
-  const message = encodeURIComponent('Hi NerdyFren, I would like to talk to a coordinator.');
-  const href = number ? `https://wa.me/${number}?text=${message}` : 'https://wa.me/';
+  const href = buildWhatsAppLink('Hi NerdyFren, I would like to talk to a coordinator.');
+
+  if (!href) {
+    return (
+      <button
+        type="button"
+        disabled
+        className="fixed bottom-5 right-5 z-[90] inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-white/10 bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-500 opacity-80 shadow-2xl sm:bottom-7 sm:right-7"
+        aria-label="Coordinator chat is temporarily unavailable"
+        title="WhatsApp support is temporarily unavailable"
+      >
+        <MessageCircle size={19} />
+        <span className="hidden sm:inline">Coordinator unavailable</span>
+      </button>
+    );
+  }
 
   return (
     <a

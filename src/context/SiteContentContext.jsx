@@ -14,7 +14,12 @@ export function SiteContentProvider({ children }) {
       if (description && result.seo?.description) description.content = result.seo.description;
       return result;
     })
-    .catch(() => fallbackSiteContent), []);
+    .catch(() => {
+      if (import.meta.env.DEV) {
+        console.warn('[NerdyFren CMS] Public content could not be refreshed; using safe fallback content.');
+      }
+      return fallbackSiteContent;
+    }), []);
 
   useEffect(() => { reload(); }, [reload]);
 

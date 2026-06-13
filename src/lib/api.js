@@ -1,17 +1,7 @@
 import axios from 'axios';
+import { runtimeConfig } from './runtimeConfig';
 
 const API_PREFIX = '/api/v1';
-const developmentApiOrigin = `${window.location.protocol}//${window.location.hostname}:3001`;
-
-function normalizeApiOrigin(value) {
-  return value
-    ?.trim()
-    .replace(/\/+$/, '')
-    .replace(/\/api\/v1$/i, '');
-}
-
-const apiOrigin = normalizeApiOrigin(import.meta.env.VITE_API_URL)
-  || (import.meta.env.DEV ? developmentApiOrigin : window.location.origin);
 
 export const API_ENDPOINTS = Object.freeze({
   services: `${API_PREFIX}/services`,
@@ -81,7 +71,7 @@ export const API_ENDPOINTS = Object.freeze({
 });
 
 export const api = axios.create({
-  baseURL: apiOrigin,
+  baseURL: runtimeConfig.apiOrigin,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -131,7 +121,56 @@ api.interceptors.response.use(
 );
 
 export function getApiError(error, fallback = 'Something went wrong. Please try again.') {
-  return error.response?.data?.error || (error.code === 'ECONNABORTED' ? 'The request timed out.' : fallback);
+  const code = error.response?.data?.code;
+  const status = error.response?.status;
+  const friendlyMessages = {
+    ACCOUNT_EXISTS: 'An account already exists with those details.',
+    ACCOUNT_INACTIVE: 'This account is unavailable. Contact NerdyFren support.',
+    ALREADY_ASSIGNED: 'This project is already assigned. Refresh and try again.',
+    APPLICATION_ALREADY_REVIEWED: 'This application has already been reviewed.',
+    APPLICATION_NOT_FOUND: 'That application could not be found.',
+    AUTH_INVALID: 'Your sign-in details are incorrect or your session has expired.',
+    AUTH_REQUIRED: 'Please sign in to continue.',
+    BOOKING_NOT_FOUND: 'That booking could not be found.',
+    DELIVERY_NOTES_REQUIRED: 'Add delivery notes before submitting.',
+    EDITOR_NOT_FOUND: 'That editor is unavailable.',
+    EMAIL_EXISTS: 'An account already exists with that email.',
+    FORBIDDEN: 'You do not have permission to perform this action.',
+    INVALID_CREDENTIALS: 'Your email or password is incorrect.',
+    INVALID_SERVICE: 'That service is currently unavailable.',
+    INVALID_STATUS_TRANSITION: 'This project is not ready for that action.',
+    LEAD_NOT_FOUND: 'That lead could not be found.',
+    MISSING_BRIEF: 'Add a project brief before continuing.',
+    NOT_ASSIGNED: 'Assign this project before continuing.',
+    PAYMENT_ALREADY_VERIFIED: 'This payment has already been verified.',
+    PAYMENT_REFERENCE_REQUIRED: 'A payment reference is required.',
+    PAYMENT_REQUIRED: 'Payment must be confirmed before assignment.',
+    PROJECT_NOT_FOUND: 'That project is unavailable or is not assigned to you.',
+    RATE_LIMITED: 'Too many attempts. Wait a few minutes and try again.',
+    RESET_TOKEN_EXPIRED: 'This reset link has expired. Request a new one.',
+    RESET_TOKEN_INVALID: 'This reset link is invalid or has already been used.',
+    REVISION_NOTES_REQUIRED: 'Add revision notes before submitting.',
+    SAME_EDITOR: 'This project is already assigned to that editor.',
+    SELF_DISABLE: 'You cannot disable your own account.',
+    USER_NOT_FOUND: 'That account could not be found.',
+    VALIDATION_ERROR: 'Check the information you entered and try again.',
+  };
+
+  if (runtimeConfig.isDevelopment) {
+    const endpoint = (error.config?.url || '')
+      .split('?')[0]
+      .replace(/\/bookings\/track\/[^/]+$/, '/bookings/track/[redacted]');
+    console.warn('[NerdyFren API]', {
+      code: code || error.code || 'REQUEST_FAILED',
+      status: status || null,
+      endpoint: endpoint || null,
+    });
+  }
+  if (friendlyMessages[code]) return friendlyMessages[code];
+  if (error.code === 'ECONNABORTED') return 'The request took too long. Please try again.';
+  if (!error.response) return 'We could not reach NerdyFren. Check your connection and try again.';
+  if (status >= 500) return 'NerdyFren is temporarily unavailable. Please try again shortly.';
+  return fallback;
 }
 
 function expectArray(data, resource) {

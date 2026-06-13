@@ -10,7 +10,7 @@ export default class AppErrorBoundary extends Component {
   }
 
   componentDidCatch(error) {
-    console.error('NerdyFren render error', error);
+    if (import.meta.env.DEV) console.error('NerdyFren render error', error);
   }
 
   render() {

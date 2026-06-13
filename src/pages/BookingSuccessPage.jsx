@@ -19,6 +19,7 @@ import useAuth from '../hooks/useAuth';
 import { getApiError, paymentsApi, userApi } from '../lib/api';
 import { formatMoney, serviceMeta } from '../lib/format';
 import { paymentConfig } from '../lib/paymentConfig';
+import { buildWhatsAppLink } from '../lib/contactConfig';
 
 export default function BookingSuccessPage() {
   const location = useLocation();
@@ -44,12 +45,11 @@ export default function BookingSuccessPage() {
       .catch(() => {});
   }, [booking?.booking_ref, numericBookingId, user]);
 
-  const whatsappMessage = useMemo(() => encodeURIComponent(
-    `Hi NerdyFren, I started project ${booking?.booking_ref || ''}.`,
-  ), [booking?.booking_ref]);
-  const whatsappHref = paymentConfig.whatsappNumber
-    ? `https://wa.me/${paymentConfig.whatsappNumber}?text=${whatsappMessage}`
-    : 'https://wa.me/';
+  const whatsappMessage = useMemo(
+    () => `Hi NerdyFren, I started project ${booking?.booking_ref || ''}.`,
+    [booking?.booking_ref],
+  );
+  const whatsappHref = buildWhatsAppLink(whatsappMessage);
 
   const evidenceHref = useMemo(() => {
     const text = [
@@ -57,9 +57,7 @@ export default function BookingSuccessPage() {
       payment.payment_reference ? `Reference: ${payment.payment_reference}` : '',
       payment.screenshot_url ? `Screenshot: ${payment.screenshot_url}` : '',
     ].filter(Boolean).join('\n');
-    return paymentConfig.whatsappNumber
-      ? `https://wa.me/${paymentConfig.whatsappNumber}?text=${encodeURIComponent(text)}`
-      : 'https://wa.me/';
+    return buildWhatsAppLink(text);
   }, [booking?.booking_ref, payment.payment_reference, payment.screenshot_url]);
 
   if (!booking) {
@@ -142,12 +140,23 @@ export default function BookingSuccessPage() {
               <BadgeIndianRupee className="text-violet-400" />
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <PaymentInstruction icon={Smartphone} label="UPI ID" value={paymentConfig.upiId} />
-              <PaymentInstruction icon={Building2} label="Bank transfer" value={paymentConfig.bankTransfer} />
+              <PaymentInstruction
+                icon={Smartphone}
+                label="UPI ID"
+                value={paymentConfig.upiId}
+                unavailable="UPI instructions are temporarily unavailable."
+              />
+              <PaymentInstruction
+                icon={Building2}
+                label="Bank transfer"
+                value={paymentConfig.bankTransfer}
+                unavailable="Bank transfer instructions are temporarily unavailable."
+              />
               <PaymentInstruction
                 icon={MessageCircle}
                 label="WhatsApp"
-                value={paymentConfig.whatsappNumber ? `+${paymentConfig.whatsappNumber}` : 'Open WhatsApp'}
+                value={paymentConfig.whatsappNumber ? `+${paymentConfig.whatsappNumber}` : ''}
+                unavailable="Coordinator chat is temporarily unavailable."
                 href={whatsappHref}
               />
             </div>
@@ -172,7 +181,7 @@ export default function BookingSuccessPage() {
                 <p className="font-medium text-emerald-300">Your payment is awaiting admin verification.</p>
                 <p className="mt-2 text-sm text-slate-400">Reference {paymentResult.payment_reference}</p>
               </div>
-              {payment.screenshot_url && (
+              {payment.screenshot_url && evidenceHref && (
                 <a href={evidenceHref} target="_blank" rel="noreferrer" className="btn-secondary mt-4 w-full">
                   <MessageCircle size={16} /> Share screenshot evidence on WhatsApp
                 </a>
@@ -245,14 +254,17 @@ function IdentifierCard({ icon: Icon, label, value }) {
   );
 }
 
-function PaymentInstruction({ icon: Icon, label, value, href }) {
+function PaymentInstruction({ icon: Icon, label, value, unavailable, href }) {
+  const available = Boolean(value);
   return (
     <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
       <Icon size={18} className="text-violet-400" />
       <p className="mt-4 text-xs uppercase tracking-[.12em] text-slate-600">{label}</p>
-      <p className="mt-2 min-h-10 break-words text-sm text-slate-300">{value}</p>
+      <p className={`mt-2 min-h-10 break-words text-sm ${available ? 'text-slate-300' : 'text-amber-300'}`}>
+        {available ? value : unavailable}
+      </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <CopyButton value={value} />
+        <CopyButton value={available ? value : ''} />
         {href && <a href={href} target="_blank" rel="noreferrer" className="btn-secondary !px-3 !py-2 text-xs">Open</a>}
       </div>
     </div>

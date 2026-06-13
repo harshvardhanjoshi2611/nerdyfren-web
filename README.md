@@ -34,11 +34,19 @@ cp .env.example .env
 npm run dev
 ```
 
-Set the backend API URL in `.env`:
+Set the local public configuration in `.env`:
 
 ```env
 VITE_API_URL=http://localhost:3001
+VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+VITE_MOTHERSHIP_URL=https://your-mothership.example
+VITE_MERCH_URL=https://your-merch-store.example
+VITE_INSTAGRAM_URL=https://instagram.com/your-profile
 ```
+
+The API origin is required in production. WhatsApp and other public destinations
+use safe disabled or hidden states when absent. Configuration warnings are
+logged only during development.
 
 The backend must include the frontend origin in `ALLOWED_ORIGINS`:
 
@@ -62,10 +70,11 @@ npm run preview
 2. Keep the detected framework preset as **Vite**.
 3. Use `npm run build` as the build command.
 4. Use `dist` as the output directory.
-5. Add `VITE_API_URL` with the public Railway backend URL:
+5. Add the public Railway and contact configuration:
 
 ```env
 VITE_API_URL=https://your-api.up.railway.app
+VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
 ```
 
 6. Deploy.
@@ -91,10 +100,17 @@ vercel --prod
 
 ## API Integration
 
-The Axios client lives in `src/lib/api.js`. Authentication tokens are stored separately for editor and admin workspaces:
+The Axios client lives in `src/lib/api.js`. Authentication tokens are stored separately by workspace:
 
+- `nerdyfren_user_token`
 - `nerdyfren_editor_token`
 - `nerdyfren_admin_token`
+- `nerdyfren_super_admin_token`
+
+Tokens are never logged or included in public links. Because the current API
+uses bearer tokens, browser storage remains sensitive to cross-site scripting;
+keep the script and CMS surface narrow and move to secure, HTTP-only cookies if
+server-managed sessions are introduced.
 
 The frontend never sends service prices or payment claims during booking creation. Prices are loaded from the backend, and payments are confirmed only from the protected admin dashboard.
 

@@ -41,7 +41,7 @@ export default function LoginPage({ role }) {
           <h1 className="mt-6 text-4xl font-bold tracking-tight">{isSuperAdmin ? 'Shape the entire NerdyFren system.' : isAdmin ? 'Run the marketplace.' : 'Welcome back, creator of creators.'}</h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">{isSuperAdmin ? 'Manage content, accounts, services and global settings.' : isAdmin ? 'Manage projects, payments and Nerd assignments from one place.' : 'Access assigned projects and keep every delivery moving.'}</p>
           <form onSubmit={submit} className="mt-9 space-y-5">
-            <label><span className="label">Email</span><input required type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={isSuperAdmin ? 'superadmin@nerdyfren.com' : isAdmin ? 'admin@nerdyfren.com' : 'you@example.com'} /></label>
+            <label><span className="label">Email</span><input required type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={isOperations ? 'you@company.com' : 'you@example.com'} /></label>
             <label><span className="label">Password</span><input required type="password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Your secure password" /></label>
             <div className="-mt-2 text-right"><Link to={forgotPath} className="text-sm text-violet-300 hover:text-violet-200">Forgot password?</Link></div>
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
