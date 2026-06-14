@@ -44,7 +44,7 @@ export default function UserAuthPage({ mode }) {
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">
             {isSignup
-              ? 'Create an account to keep every booking and tracking link together.'
+              ? 'Create an account to keep every booking and Request ID together.'
               : 'Sign in with the email or mobile number linked to your account.'}
           </p>
 

@@ -41,7 +41,8 @@ export default function LandingPage() {
             <div className="panel mx-auto max-w-4xl overflow-hidden p-8 text-center sm:p-12">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-pink-400/20 bg-gradient-to-br from-violet-500/15 to-cyan-500/10 text-pink-300"><UserRoundCheck size={27} /></div>
               <span className="eyebrow mt-6">{human.eyebrow}</span>
-              <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">{human.title}</h2>
+              <p className="mt-5 text-sm font-semibold uppercase tracking-[.18em] text-emerald-300">100% human editors</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{human.title}</h2>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">{human.subtitle}</p>
               {visuals.human_editors_media_url && <CmsMedia url={visuals.human_editors_media_url} type={visuals.human_editors_media_type} alt={human.title} className="mx-auto mt-8 max-h-96 w-full rounded-2xl object-cover" />}
             </div>
@@ -50,7 +51,7 @@ export default function LandingPage() {
 
         <section className="py-28">
           <div className="container-shell">
-            <div className="mx-auto max-w-2xl text-center"><span className="eyebrow">{how.eyebrow}</span><h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">{how.title}</h2><p className="mt-5 text-slate-400">{how.subtitle}</p></div>
+            <div className="mx-auto max-w-2xl text-center"><span className="eyebrow">How It Works</span><h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">{how.title}</h2><p className="mt-5 text-slate-400">Your Nerdy Fren turns raw footage into ready-to-post content.</p></div>
             <div className="mt-16 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {(how.steps || []).map((step, index) => {
                 const Icon = stepIcons[index] || Sparkles;

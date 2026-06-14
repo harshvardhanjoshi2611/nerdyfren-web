@@ -6,6 +6,31 @@ import { bookingsApi, getApiError, servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
 import useAuth from '../hooks/useAuth';
 
+function isWebUrl(value) {
+  if (!value.trim()) return true;
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
+function validateBooking(form) {
+  if (form.client_name.trim().length < 2) return 'Please add your name so we know who to contact.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.client_email.trim())) {
+    return 'Please enter an email address we can use for project updates.';
+  }
+  if (form.client_phone.replace(/\D/g, '').length < 7) {
+    return 'Please enter a valid phone or WhatsApp number.';
+  }
+  if (!form.service_type) return 'Please choose the service that best fits your project.';
+  if (form.brief.trim().length < 3) return 'Tell us a little about what you would like us to create.';
+  if (![form.referenceAudioUrl, form.referenceVideoUrl, form.rawFootageUrl].every(isWebUrl)) {
+    return 'One of the optional links does not look right. Use a full link beginning with http:// or https://.';
+  }
+  return '';
+}
+
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -66,6 +91,11 @@ export default function BookingPage() {
 
   const submit = async (event) => {
     event.preventDefault();
+    const validationError = validateBooking(form);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -82,8 +112,13 @@ export default function BookingPage() {
         ],
       };
       const booking = await bookingsApi.create(payload);
-      sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(booking));
-      navigate('/booking/success', { state: booking });
+      const bookingContext = {
+        ...booking,
+        customer_name: form.client_name.trim(),
+        service_name: selected?.name || selectedMeta.name || form.service_type,
+      };
+      sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(bookingContext));
+      navigate('/booking/success', { state: bookingContext });
     } catch (requestError) {
       setError(getApiError(requestError));
     } finally {
@@ -98,8 +133,13 @@ export default function BookingPage() {
         <div className="max-w-2xl">
           <span className="eyebrow">Project brief</span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">Tell us what you're making.</h1>
-          <p className="mt-4 text-slate-400">You will receive a clear Booking ID, payment instructions, and a secure tracking link after submission.</p>
-          <form onSubmit={submit} className="mt-10 space-y-7">
+          <p className="mt-4 text-slate-400">You will receive a simple Request ID, payment instructions, and private project tracking after submission.</p>
+          {user && (
+            <p className="mt-5 rounded-xl border border-emerald-400/15 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-200">
+              Your account details are filled in below. You can edit them for this request.
+            </p>
+          )}
+          <form noValidate onSubmit={submit} className="mt-10 space-y-7">
             <div className="grid gap-5 sm:grid-cols-2">
               <label><span className="label">Your name</span><input required name="client_name" value={form.client_name} onChange={update} className="input" placeholder="Alex Morgan" /></label>
               <label><span className="label">Phone / WhatsApp</span><input required name="client_phone" value={form.client_phone} onChange={update} className="input" placeholder="+91 98765 43210" /></label>
@@ -116,12 +156,12 @@ export default function BookingPage() {
               </div>
             </fieldset>
             <label><span className="label">What should we create?</span><textarea required name="brief" value={form.brief} onChange={update} className="input min-h-36 resize-y" placeholder="Share the goal, audience, desired tone, raw footage and anything that would help your specialist nail the first cut." /></label>
-            {needsAudioVideo && <label><span className="label">Reference audio link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceAudioUrl" value={form.referenceAudioUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
-            {needsAudioVideo && <label><span className="label">Reference video link</span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="referenceVideoUrl" value={form.referenceVideoUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            {needsAudioVideo && <label><span className="label">Reference audio link <span className="text-slate-600">(optional)</span></span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input type="url" name="referenceAudioUrl" value={form.referenceAudioUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
+            {needsAudioVideo && <label><span className="label">Reference video link <span className="text-slate-600">(optional)</span></span><div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input type="url" name="referenceVideoUrl" value={form.referenceVideoUrl} onChange={update} className="input !pl-11" placeholder="https://..." /></div></label>}
             <label>
-              <span className="label">Raw file link (Google Drive)</span>
-              <div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input required type="url" name="rawFootageUrl" value={form.rawFootageUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div>
-              <span className="mt-2 block text-xs leading-5 text-slate-600">Share an authorized Drive folder or file link. NerdyFren stores the link and project status, not a duplicate upload.</span>
+              <span className="label">Raw file link (Google Drive) <span className="text-slate-600">(optional)</span></span>
+              <div className="relative"><Link2 size={16} className="absolute left-4 top-3.5 text-slate-600" /><input type="url" name="rawFootageUrl" value={form.rawFootageUrl} onChange={update} className="input !pl-11" placeholder="https://drive.google.com/..." /></div>
+              <span className="mt-2 block text-xs leading-5 text-slate-600">You can submit now and share an authorized Drive link with your coordinator later.</span>
             </label>
             {error && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading || !selected} className="btn-primary w-full sm:w-auto">{loading ? <LoaderCircle className="animate-spin" size={17} /> : <>Submit project <ArrowRight size={17} /></>}</button>
@@ -136,7 +176,7 @@ export default function BookingPage() {
             <div className="my-6 h-px bg-white/[0.07]" />
             <div className="flex items-center justify-between"><span className="text-sm text-slate-400">Project total</span><span className="text-2xl font-bold">{selected ? formatMoney(selected.amount) : '-'}</span></div>
             <p className="mt-2 text-xs text-slate-600">Payment instructions and the notification form appear after booking.</p>
-            <div className="mt-6 rounded-xl bg-white/[0.03] p-4 text-xs leading-5 text-slate-500"><ShieldCheck className="mb-3 text-emerald-400" size={19} />Your tracking token is private. Keep it safe and only share it with people who should see project status.</div>
+            <div className="mt-6 rounded-xl bg-white/[0.03] p-4 text-xs leading-5 text-slate-500"><ShieldCheck className="mb-3 text-emerald-400" size={19} />Keep your Request ID private and share it only with people who should see the project.</div>
           </div>
         </aside>
       </main>

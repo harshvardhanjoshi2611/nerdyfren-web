@@ -25,7 +25,7 @@ const pages = {
       ['Client materials and links', 'Clients must provide lawful materials and working access to source and reference links. Clients remain responsible for permissions relating to footage, music, trademarks, and other supplied content.'],
       ['Payments and assignment', 'Projects may remain pending until payment is confirmed. Editor assignment, production, delivery, and revisions are tracked through the NerdyFren control panel.'],
       ['Delivery and revisions', 'Delivery links are shared through authorized project views. Revision requests should be specific and must follow the revision allowance and stage of the selected service.'],
-      ['Account and tracking security', 'Users are responsible for protecting passwords and private Tracking IDs. Do not share project access with anyone who should not see the project.'],
+      ['Account and tracking security', 'Users are responsible for protecting passwords and Request IDs. Do not share project access with anyone who should not see the project.'],
       ['Service limits', 'Timelines may change when briefs, access, approvals, or source materials are incomplete. Final legal terms, liability limits, and jurisdiction require client and qualified legal approval.'],
     ],
   },
@@ -38,7 +38,7 @@ const pages = {
       ['After work starts', 'A full refund is not automatic once an editor has been assigned or production has started. NerdyFren may offer a revision, partial adjustment, reassignment, credit, or another resolution after review.'],
       ['After delivery or approval', 'Refunds are generally not available after work has been delivered or approved unless an exception is approved by an authorized admin.'],
       ['Revision process', 'Available revision cycles should be used for reasonable changes within the agreed brief. New scope, new source material, or a materially different creative direction may require an additional quote.'],
-      ['How to request a review', 'Provide the Booking ID, payment reference, a concise explanation, and relevant evidence through official support. Do not post private project or payment links publicly.'],
+      ['How to request a review', 'Provide the Request ID, payment reference, a concise explanation, and relevant evidence through official support. Do not post private project or payment links publicly.'],
     ],
   },
 };
@@ -79,7 +79,7 @@ export default function LegalPage({ type }) {
           <section className="panel mt-6 p-6 sm:p-8">
             <h2 className="text-lg font-semibold">Questions or support</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              Contact NerdyFren through an official support channel and include your Booking ID when applicable.
+              Contact NerdyFren through an official support channel and include your Request ID when applicable.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               {whatsappHref && (

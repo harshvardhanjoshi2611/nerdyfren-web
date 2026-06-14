@@ -75,8 +75,8 @@ export default function ProjectDetailsPage() {
                 <p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-600">Project links</p>
                 <div className="mt-5 space-y-2">
                   {project.ref_links?.length ? project.ref_links.map((item) => (
-                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm text-slate-300 hover:border-cyan-400/30">
-                      <span>{getProjectLinkLabel(item.label)}</span><ExternalLink size={15} />
+                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm text-slate-300 hover:border-cyan-400/30">
+                      <span className="min-w-0 break-words">{getProjectLinkLabel(item.label)}</span><ExternalLink size={15} className="shrink-0" />
                     </a>
                   )) : <p className="text-sm text-slate-600">No source or reference links were shared.</p>}
                 </div>

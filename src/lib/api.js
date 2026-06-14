@@ -131,7 +131,7 @@ export function getApiError(error, fallback = 'Something went wrong. Please try 
     APPLICATION_NOT_FOUND: 'That application could not be found.',
     AUTH_INVALID: 'Your sign-in details are incorrect or your session has expired.',
     AUTH_REQUIRED: 'Please sign in to continue.',
-    BOOKING_NOT_FOUND: 'That booking could not be found.',
+    BOOKING_NOT_FOUND: 'We could not find a request with that ID.',
     DELIVERY_NOTES_REQUIRED: 'Add delivery notes before submitting.',
     EDITOR_NOT_FOUND: 'That editor is unavailable.',
     EMAIL_EXISTS: 'An account already exists with that email.',

@@ -29,7 +29,7 @@ const roleSettings = {
     api: authApi,
   },
   editor: {
-    label: 'Editor workspace',
+    label: 'Nerd workspace',
     forgotPath: '/editor/forgot-password',
     loginPath: '/editor/signin',
     workspace: 'your Nerd workspace',

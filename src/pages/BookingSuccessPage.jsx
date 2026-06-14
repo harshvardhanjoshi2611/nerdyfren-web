@@ -7,7 +7,6 @@ import {
   LoaderCircle,
   MessageCircle,
   ReceiptIndianRupee,
-  ShieldCheck,
   Smartphone,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -19,13 +18,14 @@ import useAuth from '../hooks/useAuth';
 import { getApiError, paymentsApi, userApi } from '../lib/api';
 import { formatMoney, serviceMeta } from '../lib/format';
 import { paymentConfig } from '../lib/paymentConfig';
-import { buildWhatsAppLink } from '../lib/contactConfig';
+import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
 
 export default function BookingSuccessPage() {
   const location = useLocation();
   const { user } = useAuth();
   const stored = JSON.parse(sessionStorage.getItem('nerdyfren_last_booking') || 'null');
   const booking = location.state || stored;
+  const requestId = booking?.request_id || booking?.booking_ref || '';
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [numericBookingId, setNumericBookingId] = useState(
     booking?.booking_id || booking?.id || '',
@@ -36,36 +36,56 @@ export default function BookingSuccessPage() {
   const [paymentResult, setPaymentResult] = useState(null);
 
   useEffect(() => {
-    if (!user || !booking?.booking_ref || numericBookingId) return;
+    if (!user || !requestId || numericBookingId) return;
     userApi.bookings()
       .then((result) => {
-        const owned = result.bookings?.find((item) => item.booking_ref === booking.booking_ref);
+        const owned = result.bookings?.find((item) => (
+          (item.request_id || item.booking_ref) === requestId
+        ));
         if (owned?.id) setNumericBookingId(owned.id);
       })
       .catch(() => {});
-  }, [booking?.booking_ref, numericBookingId, user]);
+  }, [numericBookingId, requestId, user]);
 
   const whatsappMessage = useMemo(
-    () => `Hi NerdyFren, I started project ${booking?.booking_ref || ''}.`,
-    [booking?.booking_ref],
+    () => buildCoordinatorMessage({
+      requestId,
+      customerName: booking?.customer_name || user?.name,
+      service: booking?.service_name || serviceMeta[booking?.service_type]?.name,
+      context: 'Booking confirmed; payment is next',
+    }),
+    [booking?.customer_name, booking?.service_name, booking?.service_type, requestId, user?.name],
   );
   const whatsappHref = buildWhatsAppLink(whatsappMessage);
 
   const evidenceHref = useMemo(() => {
     const text = [
-      `Hi NerdyFren, payment notification submitted for ${booking?.booking_ref || ''}.`,
-      payment.payment_reference ? `Reference: ${payment.payment_reference}` : '',
+      buildCoordinatorMessage({
+        requestId,
+        customerName: booking?.customer_name || user?.name,
+        service: booking?.service_name || serviceMeta[booking?.service_type]?.name,
+        context: 'Payment notification submitted',
+      }),
+      payment.payment_reference ? `Payment reference: ${payment.payment_reference}` : '',
       payment.screenshot_url ? `Screenshot: ${payment.screenshot_url}` : '',
     ].filter(Boolean).join('\n');
     return buildWhatsAppLink(text);
-  }, [booking?.booking_ref, payment.payment_reference, payment.screenshot_url]);
+  }, [
+    booking?.customer_name,
+    booking?.service_name,
+    booking?.service_type,
+    payment.payment_reference,
+    payment.screenshot_url,
+    requestId,
+    user?.name,
+  ]);
 
   if (!booking) {
     return (
       <div className="grid min-h-screen place-items-center bg-canvas p-5">
         <div className="panel max-w-md p-8 text-center">
           <h1 className="text-xl font-semibold">No recent booking found</h1>
-          <p className="mt-2 text-sm text-slate-500">Start a project to receive your Booking ID.</p>
+          <p className="mt-2 text-sm text-slate-500">Start a project to receive your Request ID.</p>
           <Link to="/booking" className="btn-primary mt-6">Start a project</Link>
         </div>
       </div>
@@ -84,7 +104,7 @@ export default function BookingSuccessPage() {
       });
       if (payment.screenshot_url) {
         sessionStorage.setItem(
-          `nerdyfren_payment_evidence_${booking.booking_ref}`,
+          `nerdyfren_payment_evidence_${requestId}`,
           payment.screenshot_url,
         );
       }
@@ -105,19 +125,14 @@ export default function BookingSuccessPage() {
           <div className="mt-6 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Brief received</p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">Your project is booked.</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-400">Complete payment, notify the team, and keep your private Tracking ID nearby.</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">Complete payment, notify the team, and keep your Request ID nearby.</p>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mx-auto mt-8 max-w-md">
             <IdentifierCard
               icon={ReceiptIndianRupee}
-              label="Booking ID"
-              value={booking.booking_ref}
-            />
-            <IdentifierCard
-              icon={ShieldCheck}
-              label="Private Tracking ID"
-              value={booking.tracking_token}
+              label="Request ID"
+              value={requestId}
             />
           </div>
 
@@ -165,14 +180,14 @@ export default function BookingSuccessPage() {
           <button onClick={() => setPaymentOpen(true)} className="btn-primary mt-7 w-full">
             <ReceiptIndianRupee size={17} /> I Have Paid
           </button>
-          <Link to={`/track?token=${encodeURIComponent(booking.tracking_token)}`} className="btn-secondary mt-3 w-full">Track Project <ArrowRight size={17} /></Link>
+          <Link to={`/track?id=${encodeURIComponent(requestId)}`} className="btn-secondary mt-3 w-full">Track Project <ArrowRight size={17} /></Link>
         </div>
       </div>
 
       {paymentOpen && (
         <Modal
           title={paymentResult ? 'Payment notification sent' : 'Notify payment'}
-          eyebrow={booking.booking_ref}
+          eyebrow={requestId}
           onClose={() => setPaymentOpen(false)}
         >
           {paymentResult ? (
@@ -190,21 +205,11 @@ export default function BookingSuccessPage() {
             </div>
           ) : (
             <form onSubmit={submitPayment} className="space-y-4">
-              <label>
-                <span className="label">Numeric Booking ID</span>
-                <input
-                  required
-                  min="1"
-                  type="number"
-                  className="input"
-                  value={numericBookingId}
-                  onChange={(event) => setNumericBookingId(event.target.value)}
-                  placeholder={user ? 'Resolving your booking...' : 'Enter the numeric ID shared by the team'}
-                />
-                <span className="mt-2 block text-xs text-slate-600">
-                  Signed-in bookings resolve automatically. Guest bookings can use the numeric ID shared by the coordinator.
-                </span>
-              </label>
+              {!numericBookingId && (
+                <p className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
+                  We could not connect this payment form to the request. Use the WhatsApp option above and share your Request ID.
+                </p>
+              )}
               <label>
                 <span className="label">Payment Reference</span>
                 <input

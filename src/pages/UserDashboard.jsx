@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 import { ErrorState, LoadingState } from '../components/PageState';
 import StatusBadge from '../components/StatusBadge';
+import RoleSwitcher from '../components/RoleSwitcher';
 import useAuth from '../hooks/useAuth';
 import { getApiError, userApi } from '../lib/api';
 import { formatDate, getProjectName, serviceMeta } from '../lib/format';
@@ -51,7 +52,8 @@ export default function UserDashboard() {
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-3">
-            <Link to="/booking" className="btn-primary !px-4 !py-2"><Plus size={16} /> New project</Link>
+            <RoleSwitcher currentRole="user" user={user} />
+            <Link to="/booking" className="btn-primary !px-3 !py-2 sm:!px-4"><Plus size={16} /> <span className="hidden sm:inline">New project</span></Link>
             <button onClick={endSession} className="rounded-lg p-2.5 text-slate-500 transition hover:bg-white/5 hover:text-white" aria-label="Sign out"><LogOut size={18} /></button>
           </div>
         </div>
@@ -62,7 +64,7 @@ export default function UserDashboard() {
           <div>
             <span className="eyebrow">User Dashboard</span>
             <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">Good to see you, {user?.name?.split(' ')[0]}.</h1>
-            <p className="mt-2 text-sm text-slate-500">Every account-owned project and its private tracking link.</p>
+            <p className="mt-2 text-sm text-slate-500">Every account-owned project and its Request ID.</p>
           </div>
           <p className="text-sm text-slate-600">{user?.email || user?.mobile}</p>
         </div>
@@ -92,7 +94,7 @@ export default function UserDashboard() {
             <div className="panel p-10 text-center">
               <FolderKanban className="mx-auto text-slate-600" />
               <h3 className="mt-4 font-semibold">No account bookings yet</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">New projects created while signed in will appear here. Existing guest bookings remain available through their private tracking links.</p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">New projects created while signed in will appear here. Existing guest bookings remain available with their Request IDs.</p>
               <Link to="/booking" className="btn-primary mt-6">Start a project</Link>
             </div>
           )}
@@ -102,7 +104,11 @@ export default function UserDashboard() {
                 <article key={booking.id} className="panel p-5 sm:p-6">
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="grid flex-1 gap-4 sm:grid-cols-4">
-                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Project Name</p><Link to={`/track?token=${encodeURIComponent(booking.tracking_token)}`} className="mt-2 block font-semibold text-white hover:text-violet-300">{getProjectName(booking)}</Link></div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-600">Project Name</p>
+                        <Link to={`/track?id=${encodeURIComponent(booking.request_id || booking.booking_ref)}`} className="mt-2 block font-semibold text-white hover:text-violet-300">{getProjectName(booking)}</Link>
+                        <p className="mt-2 break-all font-mono text-[11px] text-violet-300">{booking.request_id || booking.booking_ref}</p>
+                      </div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Service</p><p className="mt-2 text-sm text-slate-300">{serviceMeta[booking.service_type]?.name || booking.service_type}</p></div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Date Created</p><p className="mt-2 text-sm text-slate-300">{formatDate(booking.created_at)}</p></div>

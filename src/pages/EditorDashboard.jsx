@@ -31,7 +31,7 @@ export default function EditorDashboard() {
     <DashboardShell role="editor" links={links}>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={reload} /> : (
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm text-cyan-400">Editor workspace</p>
+          <p className="text-sm text-cyan-400">Nerd workspace</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Good to see you, {data.profile.name.split(' ')[0]}.</h1>
           <p className="mt-2 text-sm text-slate-500">Only projects assigned to you appear here.</p>
 
@@ -71,7 +71,7 @@ export default function EditorDashboard() {
                       <h3 className="font-medium">{serviceMeta[project.service_type]?.name || project.service_type}</h3>
                       <StatusBadge status={project.status} />
                     </div>
-                    <p className="mt-1 truncate text-sm text-slate-500">{project.client_name} · {formatDate(project.updated_at)}</p>
+                    <p className="mt-1 truncate text-sm text-slate-500">{project.client_name} - {formatDate(project.updated_at)}</p>
                   </div>
                 </Link>
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">

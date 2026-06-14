@@ -1,6 +1,8 @@
 import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { buildWhatsAppLink } from '../lib/contactConfig';
+import useAuth from '../hooks/useAuth';
+import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
+import { serviceMeta } from '../lib/format';
 
 const visiblePaths = new Set([
   '/',
@@ -13,10 +15,39 @@ const visiblePaths = new Set([
 ]);
 
 export default function FloatingWhatsApp() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const { user } = useAuth();
   if (!visiblePaths.has(pathname)) return null;
 
-  const href = buildWhatsAppLink('Hi NerdyFren, I would like to talk to a coordinator.');
+  const params = new URLSearchParams(search);
+  let recentBooking = null;
+  try {
+    recentBooking = JSON.parse(sessionStorage.getItem('nerdyfren_last_booking') || 'null');
+  } catch {
+    recentBooking = null;
+  }
+  const useRecentBooking = pathname === '/booking/success';
+  const requestId = params.get('id')
+    || params.get('request_id')
+    || (useRecentBooking ? recentBooking?.request_id || recentBooking?.booking_ref : '');
+  const serviceType = useRecentBooking ? recentBooking?.service_type : '';
+  const contextLabels = {
+    '/': 'Homepage',
+    '/services': 'Services',
+    '/book': 'Booking form',
+    '/booking': 'Booking form',
+    '/booking/success': 'Booking confirmed',
+    '/dashboard': 'Creator dashboard',
+    '/track': 'Project tracking',
+  };
+  const href = buildWhatsAppLink(buildCoordinatorMessage({
+    requestId,
+    customerName: user?.name || (useRecentBooking ? recentBooking?.customer_name : ''),
+    service: useRecentBooking
+      ? recentBooking?.service_name || serviceMeta[serviceType]?.name
+      : '',
+    context: contextLabels[pathname],
+  }));
 
   if (!href) {
     return (

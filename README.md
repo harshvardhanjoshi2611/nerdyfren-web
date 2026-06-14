@@ -19,7 +19,7 @@ Production frontend for the NerdyFren managed creator marketplace.
 | `/services` | Live service catalog and pricing |
 | `/booking` | Canonical creator booking form |
 | `/book` | Backward-compatible booking alias |
-| `/booking/success` | Booking confirmation and private tracking token |
+| `/booking/success` | Booking confirmation and customer-facing Request ID |
 | `/track` | Privacy-safe booking tracking |
 | `/privacy` | Public MVP privacy placeholder |
 | `/terms` | Public MVP terms placeholder |

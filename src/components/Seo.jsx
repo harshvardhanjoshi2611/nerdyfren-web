@@ -15,7 +15,7 @@ const publicRoutes = {
   },
   '/booking': {
     title: 'Book a Creative Project | NerdyFren',
-    description: 'Start a managed creator project, share private source links, and receive a secure Tracking ID.',
+    description: 'Start a managed creator project, share optional source links, and receive a simple Request ID.',
   },
   '/signin': {
     title: 'Creator Sign In | NerdyFren',
@@ -27,7 +27,7 @@ const publicRoutes = {
   },
   '/track': {
     title: 'Track Your Project | NerdyFren',
-    description: 'Use your private Tracking ID to follow delivery status, review work, and request revisions.',
+    description: 'Use your Request ID to follow delivery status, review work, and request revisions.',
   },
   '/privacy': {
     title: 'Privacy Notice | NerdyFren',

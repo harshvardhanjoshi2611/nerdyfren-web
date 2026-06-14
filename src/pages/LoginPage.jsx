@@ -23,10 +23,15 @@ export default function LoginPage({ role }) {
     event.preventDefault(); setLoading(true); setError('');
     try {
       const result = await (isSuperAdmin ? superAdminApi.login(form) : isAdmin ? adminApi.login(form) : editorApi.login(form));
-      if (isAdmin) localStorage.removeItem('nerdyfren_super_admin_token');
-      if (isSuperAdmin) localStorage.removeItem('nerdyfren_admin_token');
+      if (isSuperAdmin) {
+        localStorage.removeItem('nerdyfren_admin_token');
+        localStorage.removeItem('nerdyfren_admin_roles');
+        localStorage.removeItem('nerdyfren_admin_profile');
+      }
       localStorage.setItem(`nerdyfren_${role}_token`, result.token);
       if (result.editor) localStorage.setItem('nerdyfren_editor_profile', JSON.stringify(result.editor));
+      if (result.admin) localStorage.setItem(`nerdyfren_${role}_profile`, JSON.stringify(result.admin));
+      localStorage.setItem(`nerdyfren_${role}_roles`, JSON.stringify(result.roles || [role]));
       navigate(location.state?.from?.pathname || (role === 'editor' ? '/editor/dashboard' : isSuperAdmin ? '/super-admin/dashboard' : '/admin'));
     } catch (requestError) { setError(getApiError(requestError, 'Login failed.')); }
     finally { setLoading(false); }
@@ -37,7 +42,7 @@ export default function LoginPage({ role }) {
       <div className="flex flex-col px-5 py-7 sm:px-10">
         <Logo />
         <div className="mx-auto my-auto w-full max-w-md py-16">
-          <span className="eyebrow"><LockKeyhole size={13} /> {isSuperAdmin ? 'System access' : isAdmin ? 'Operations access' : 'Editor workspace'}</span>
+          <span className="eyebrow"><LockKeyhole size={13} /> {isSuperAdmin ? 'System access' : isAdmin ? 'Operations access' : 'Nerd workspace'}</span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight">{isSuperAdmin ? 'Shape the entire NerdyFren system.' : isAdmin ? 'Run the marketplace.' : 'Welcome back, creator of creators.'}</h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">{isSuperAdmin ? 'Manage content, accounts, services and global settings.' : isAdmin ? 'Manage projects, payments and Nerd assignments from one place.' : 'Access assigned projects and keep every delivery moving.'}</p>
           <form onSubmit={submit} className="mt-9 space-y-5">

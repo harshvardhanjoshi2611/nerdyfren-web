@@ -15,3 +15,18 @@ export function buildWhatsAppLink(message = '') {
     : '';
   return `https://wa.me/${publicContactConfig.whatsappNumber}${query}`;
 }
+
+export function buildCoordinatorMessage({
+  requestId,
+  customerName,
+  service,
+  context,
+} = {}) {
+  return [
+    'Hi NerdyFren, I would like to talk to a coordinator.',
+    requestId ? `Request ID: ${requestId}` : '',
+    customerName ? `Customer: ${customerName}` : '',
+    service ? `Service: ${service}` : '',
+    context ? `Context: ${context}` : '',
+  ].filter(Boolean).join('\n');
+}

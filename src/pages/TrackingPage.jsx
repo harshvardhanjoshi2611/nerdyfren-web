@@ -4,12 +4,13 @@ import {
   Circle,
   ExternalLink,
   LoaderCircle,
+  MessageCircle,
   RotateCcw,
   Search,
   ShieldCheck,
   ThumbsUp,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Modal from '../components/Modal';
@@ -23,6 +24,7 @@ import {
   humanize,
   serviceMeta,
 } from '../lib/format';
+import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
 
 const journey = [
   'Brief Received',
@@ -61,8 +63,8 @@ function getJourneyIndex(booking) {
 export default function TrackingPage() {
   const [params, setParams] = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const requestedToken = params.get('token');
-  const [token, setToken] = useState(requestedToken || '');
+  const requestedIdentifier = params.get('id') || params.get('request_id') || params.get('token');
+  const [identifier, setIdentifier] = useState(requestedIdentifier || '');
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,30 +73,47 @@ export default function TrackingPage() {
   const [notice, setNotice] = useState('');
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [revisionNotes, setRevisionNotes] = useState('');
+  const autoLoadedRef = useRef('');
 
-  if (!authLoading && isAuthenticated && !requestedToken) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const loadBooking = async (trackingToken, updateUrl = false) => {
-    const result = await bookingsApi.track(trackingToken);
+  const loadBooking = useCallback(async (lookup, updateUrl = false) => {
+    const result = await bookingsApi.track(lookup);
+    const requestId = result.request_id || result.booking_ref;
     setBooking(result);
-    if (updateUrl) setParams({ token: trackingToken });
+    setIdentifier(requestId || lookup);
+    autoLoadedRef.current = requestId || lookup;
+    if (updateUrl && requestId) setParams({ id: requestId });
     return result;
-  };
+  }, [setParams]);
+
+  useEffect(() => {
+    if (!requestedIdentifier || autoLoadedRef.current === requestedIdentifier) return;
+    autoLoadedRef.current = requestedIdentifier;
+    setIdentifier(requestedIdentifier);
+    setLoading(true);
+    setError('');
+    loadBooking(requestedIdentifier, true)
+      .catch((requestError) => {
+        setBooking(null);
+        setError(getApiError(requestError, 'We could not find a project for that Request ID.'));
+      })
+      .finally(() => setLoading(false));
+  }, [loadBooking, requestedIdentifier]);
 
   const track = async (event) => {
     event?.preventDefault();
-    const trackingToken = token.trim();
-    if (!trackingToken) return;
+    const lookup = identifier.trim();
+    if (!lookup) {
+      setError('Enter your Request ID to track the project.');
+      return;
+    }
     setLoading(true);
     setError('');
     setNotice('');
     setBooking(null);
     try {
-      await loadBooking(trackingToken, true);
+      await loadBooking(lookup, true);
     } catch (requestError) {
-      setError(getApiError(requestError, 'We could not find a project for that Tracking ID.'));
+      setError(getApiError(requestError, 'We could not find a project for that Request ID.'));
     } finally {
       setLoading(false);
     }
@@ -105,8 +124,11 @@ export default function TrackingPage() {
     setActionError('');
     setNotice('');
     try {
-      await clientApi.approve({ tracking_id: token.trim() });
-      await loadBooking(token.trim());
+      const requestId = booking?.request_id || booking?.booking_ref;
+      await clientApi.approve(requestId
+        ? { request_id: requestId }
+        : { tracking_id: identifier.trim() });
+      await loadBooking(requestId || identifier.trim());
       setNotice('Delivery approved. This project is now complete.');
     } catch (requestError) {
       setActionError(getApiError(requestError, 'Could not approve this delivery.'));
@@ -121,11 +143,12 @@ export default function TrackingPage() {
     setActionError('');
     setNotice('');
     try {
+      const requestId = booking?.request_id || booking?.booking_ref;
       await clientApi.requestRevision({
-        tracking_id: token.trim(),
+        ...(requestId ? { request_id: requestId } : { tracking_id: identifier.trim() }),
         revision_notes: revisionNotes.trim(),
       });
-      await loadBooking(token.trim());
+      await loadBooking(requestId || identifier.trim());
       setRevisionNotes('');
       setRevisionOpen(false);
       setNotice('Revision requested. Your editor can now see the feedback.');
@@ -150,14 +173,23 @@ export default function TrackingPage() {
     && ['draft_submitted', 'final_delivered', 'delivered'].includes(booking.status);
   const canRevise = delivery
     && ['draft_submitted', 'final_delivered', 'delivered', 'completed'].includes(booking.status);
+  const requestId = booking?.request_id || booking?.booking_ref;
+  const coordinatorHref = booking && buildWhatsAppLink(buildCoordinatorMessage({
+    requestId,
+    service: serviceMeta[booking.service_type]?.name || humanize(booking.service_type),
+    context: `Tracking page; status ${humanize(booking.status)}`,
+  }));
+
+  if (!authLoading && isAuthenticated && !requestedIdentifier) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-canvas">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-canvas/85 backdrop-blur-xl">
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
-          <nav className="flex items-center gap-2 sm:gap-6">
-            <Link to="/" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Home</Link>
+          <nav className="flex items-center gap-3 sm:gap-6">
             <Link to="/booking" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Start Project</Link>
             <Link to="/track" className="text-xs font-medium text-white sm:text-sm">Track Project</Link>
           </nav>
@@ -169,11 +201,11 @@ export default function TrackingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <span className="eyebrow"><ShieldCheck size={13} /> Private project tracking</span>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Know exactly where your project stands.</h1>
-            <p className="mt-4 text-slate-400">Enter the secure Tracking ID from your booking confirmation.</p>
+            <p className="mt-4 text-slate-400">Enter the Request ID from your booking confirmation.</p>
           </div>
 
           <form onSubmit={track} className="panel mx-auto mt-10 flex max-w-2xl flex-col gap-3 p-3 sm:flex-row">
-            <input value={token} onChange={(event) => setToken(event.target.value)} className="input border-0 !bg-transparent" placeholder="Enter your Tracking ID" />
+            <input value={identifier} onChange={(event) => setIdentifier(event.target.value)} className="input border-0 !bg-transparent uppercase" placeholder="Enter your Request ID" aria-label="Request ID" />
             <button disabled={loading} className="btn-primary shrink-0"><Search size={16} /> {loading ? 'Checking...' : 'Track project'}</button>
           </form>
 
@@ -181,8 +213,19 @@ export default function TrackingPage() {
 
           {booking && (
             <div className="panel mx-auto mt-8 max-w-4xl overflow-hidden">
+              <div className="flex flex-col gap-4 border-b border-white/[0.07] p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[.14em] text-slate-600">Project</p>
+                  <h2 className="mt-2 text-xl font-semibold">{getProjectName(booking)}</h2>
+                </div>
+                {coordinatorHref && (
+                  <a href={coordinatorHref} target="_blank" rel="noreferrer" className="btn-secondary !px-4 !py-2.5">
+                    <MessageCircle size={16} /> Talk to Coordinator
+                  </a>
+                )}
+              </div>
               <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Project Name</p><p className="mt-2 font-semibold">{getProjectName(booking)}</p></div>
+                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Request ID</p><p className="mt-2 break-all font-mono text-sm font-semibold">{requestId}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Service</p><p className="mt-2 font-semibold">{serviceMeta[booking.service_type]?.name || humanize(booking.service_type)}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Created Date</p><p className="mt-2 font-semibold">{formatDate(booking.created_at)}</p></div>
@@ -263,12 +306,12 @@ export default function TrackingPage() {
             </div>
           )}
 
-          {!booking && !error && <div className="mx-auto mt-12 max-w-lg text-center text-sm text-slate-600">No Tracking ID yet? <Link to="/booking" className="inline-flex items-center gap-1 text-violet-400 hover:text-violet-300">Start a project <ArrowRight size={14} /></Link></div>}
+          {!booking && !error && <div className="mx-auto mt-12 max-w-lg text-center text-sm text-slate-600">No Request ID yet? <Link to="/booking" className="inline-flex items-center gap-1 text-violet-400 hover:text-violet-300">Start a project <ArrowRight size={14} /></Link></div>}
         </div>
       </main>
 
       {revisionOpen && (
-        <Modal title="Request a revision" eyebrow={booking?.booking_ref} onClose={() => setRevisionOpen(false)}>
+        <Modal title="Request a revision" eyebrow={requestId} onClose={() => setRevisionOpen(false)}>
           <form onSubmit={requestRevision}>
             <label>
               <span className="label">Revision notes</span>
