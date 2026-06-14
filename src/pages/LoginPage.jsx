@@ -27,6 +27,10 @@ export default function LoginPage({ role }) {
         localStorage.removeItem('nerdyfren_admin_token');
         localStorage.removeItem('nerdyfren_admin_roles');
         localStorage.removeItem('nerdyfren_admin_profile');
+      } else if (isAdmin) {
+        localStorage.removeItem('nerdyfren_super_admin_token');
+        localStorage.removeItem('nerdyfren_super_admin_roles');
+        localStorage.removeItem('nerdyfren_super_admin_profile');
       }
       localStorage.setItem(`nerdyfren_${role}_token`, result.token);
       if (result.editor) localStorage.setItem('nerdyfren_editor_profile', JSON.stringify(result.editor));

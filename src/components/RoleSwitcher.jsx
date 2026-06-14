@@ -15,19 +15,27 @@ const workspaces = {
 export default function RoleSwitcher({ currentRole, user, className = '' }) {
   const navigate = useNavigate();
   const availableRoles = useMemo(() => {
-    const roles = new Set(user?.roles || []);
-    if (user?.role === 'user') roles.add('user');
+    let sessionRoles = [];
+    try {
+      sessionRoles = JSON.parse(
+        localStorage.getItem(`nerdyfren_${currentRole}_roles`) || '[]',
+      );
+    } catch {
+      sessionRoles = [];
+    }
+    const roles = new Set(user?.roles || sessionRoles);
+    if (user?.role) roles.add(user.role);
     roles.add(currentRole);
-
-    Object.entries(workspaces).forEach(([role, workspace]) => {
-      const hasSessionMetadata = localStorage.getItem(`nerdyfren_${role}_roles`);
-      if (localStorage.getItem(workspace.token) && (role === currentRole || hasSessionMetadata)) {
-        roles.add(role);
-      }
-    });
     if (roles.has('super_admin')) roles.add('admin');
 
-    return Object.keys(workspaces).filter((role) => roles.has(role));
+    return Object.keys(workspaces).filter((role) => {
+      if (!roles.has(role)) return false;
+      if (role === currentRole) return true;
+      if (role === 'admin' && roles.has('super_admin')) {
+        return Boolean(localStorage.getItem(workspaces.super_admin.token));
+      }
+      return Boolean(localStorage.getItem(workspaces[role].token));
+    });
   }, [currentRole, user]);
 
   if (availableRoles.length < 2) return null;

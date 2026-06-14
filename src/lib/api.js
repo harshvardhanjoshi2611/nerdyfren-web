@@ -76,8 +76,15 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+function clearWorkspaceSession(role) {
+  localStorage.removeItem(`nerdyfren_${role}_token`);
+  localStorage.removeItem(`nerdyfren_${role}_roles`);
+  localStorage.removeItem(`nerdyfren_${role}_profile`);
+}
+
 api.interceptors.request.use((config) => {
   const isUserRequest = config.url === API_ENDPOINTS.bookings
+    || config.url?.startsWith(`${API_PREFIX}/bookings/track/`)
     || config.url === API_ENDPOINTS.paymentNotify
     || config.url?.startsWith(`${API_PREFIX}/client`)
     || config.url === API_ENDPOINTS.authLogout
@@ -105,16 +112,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) localStorage.removeItem('nerdyfren_admin_token');
-      if (error.config?.url?.startsWith(`${API_PREFIX}/super-admin`)) localStorage.removeItem('nerdyfren_super_admin_token');
-      if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) localStorage.removeItem('nerdyfren_editor_token');
+      if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) clearWorkspaceSession('admin');
+      if (error.config?.url?.startsWith(`${API_PREFIX}/super-admin`)) clearWorkspaceSession('super_admin');
+      if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) clearWorkspaceSession('editor');
       if (
         error.config?.url === API_ENDPOINTS.paymentNotify
+        || error.config?.url?.startsWith(`${API_PREFIX}/bookings/track/`)
         || error.config?.url?.startsWith(`${API_PREFIX}/client`)
         || error.config?.url === API_ENDPOINTS.authLogout
         || error.config?.url === API_ENDPOINTS.authMe
         || error.config?.url?.startsWith(`${API_PREFIX}/user`)
-      ) localStorage.removeItem('nerdyfren_user_token');
+      ) clearWorkspaceSession('user');
     }
     return Promise.reject(error);
   },

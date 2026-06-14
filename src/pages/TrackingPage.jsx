@@ -37,6 +37,25 @@ const journey = [
   'Mission Complete',
 ];
 
+const privateTokenPattern = /^[A-Za-z0-9_-]{43}$/;
+
+function recentBooking() {
+  try {
+    return JSON.parse(sessionStorage.getItem('nerdyfren_last_booking') || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function getPrivateLookup(identifier) {
+  if (privateTokenPattern.test(identifier)) return identifier;
+  const recent = recentBooking();
+  const recentRequestId = recent?.request_id || recent?.booking_ref;
+  return recentRequestId?.toUpperCase() === identifier.toUpperCase()
+    ? recent?.tracking_token || ''
+    : '';
+}
+
 function getJourneyIndex(booking) {
   const revisionCount = Number(
     booking.revision_count
@@ -73,10 +92,13 @@ export default function TrackingPage() {
   const [notice, setNotice] = useState('');
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [revisionNotes, setRevisionNotes] = useState('');
+  const [privateToken, setPrivateToken] = useState('');
   const autoLoadedRef = useRef('');
 
   const loadBooking = useCallback(async (lookup, updateUrl = false) => {
-    const result = await bookingsApi.track(lookup);
+    const privateLookup = getPrivateLookup(lookup);
+    if (privateLookup) setPrivateToken(privateLookup);
+    const result = await bookingsApi.track(privateLookup || lookup);
     const requestId = result.request_id || result.booking_ref;
     setBooking(result);
     setIdentifier(requestId || lookup);
@@ -110,6 +132,7 @@ export default function TrackingPage() {
     setError('');
     setNotice('');
     setBooking(null);
+    setPrivateToken('');
     try {
       await loadBooking(lookup, true);
     } catch (requestError) {
@@ -125,9 +148,9 @@ export default function TrackingPage() {
     setNotice('');
     try {
       const requestId = booking?.request_id || booking?.booking_ref;
-      await clientApi.approve(requestId
-        ? { request_id: requestId }
-        : { tracking_id: identifier.trim() });
+      await clientApi.approve(privateToken
+        ? { tracking_token: privateToken }
+        : { request_id: requestId });
       await loadBooking(requestId || identifier.trim());
       setNotice('Delivery approved. This project is now complete.');
     } catch (requestError) {
@@ -145,7 +168,7 @@ export default function TrackingPage() {
     try {
       const requestId = booking?.request_id || booking?.booking_ref;
       await clientApi.requestRevision({
-        ...(requestId ? { request_id: requestId } : { tracking_id: identifier.trim() }),
+        ...(privateToken ? { tracking_token: privateToken } : { request_id: requestId }),
         revision_notes: revisionNotes.trim(),
       });
       await loadBooking(requestId || identifier.trim());
@@ -168,10 +191,13 @@ export default function TrackingPage() {
       }
       : null
   );
-  const canApprove = delivery
+  const canManage = Boolean(booking?.can_manage && (isAuthenticated || privateToken));
+  const canApprove = canManage
+    && delivery
     && !booking?.client_approved
     && ['draft_submitted', 'final_delivered', 'delivered'].includes(booking.status);
-  const canRevise = delivery
+  const canRevise = canManage
+    && delivery
     && ['draft_submitted', 'final_delivered', 'delivered', 'completed'].includes(booking.status);
   const requestId = booking?.request_id || booking?.booking_ref;
   const coordinatorHref = booking && buildWhatsAppLink(buildCoordinatorMessage({
@@ -233,6 +259,11 @@ export default function TrackingPage() {
 
               {notice && <div className="mx-6 mb-6 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">{notice}</div>}
               {actionError && <div className="mx-6 mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-300">{actionError}</div>}
+              {booking.access_level === 'status' && (
+                <div className="mx-6 mb-6 rounded-xl border border-violet-400/20 bg-violet-500/[0.07] p-4 text-sm leading-6 text-violet-200">
+                  This Request ID shows status only. Sign in as the booking owner or open the original booking confirmation to view delivery details and take action.
+                </div>
+              )}
 
               {delivery && (
                 <div className="border-t border-white/[0.07] p-6">
@@ -264,7 +295,7 @@ export default function TrackingPage() {
                   <p className="text-xs font-semibold uppercase tracking-[.16em] text-slate-600">Revision history</p>
                   <div className="mt-4 space-y-3">
                     {booking.revisions.map((revision) => (
-                      <div key={revision.id} className="rounded-xl bg-white/[0.03] p-4">
+                      <div key={`${revision.revision_number}-${revision.requested_at}`} className="rounded-xl bg-white/[0.03] p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-medium">Revision {revision.revision_number}</p>
                           <StatusBadge status={revision.status} />

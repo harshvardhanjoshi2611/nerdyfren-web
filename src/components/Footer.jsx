@@ -55,7 +55,7 @@ export default function Footer() {
           {contactLinks.map(([label, url]) => (
             <a key={label} href={url} target="_blank" rel="noreferrer" className="hover:text-white">{label}</a>
           ))}
-          {links.map((item) => item.url.startsWith('/') ? <Link key={item.id} to={item.url} className="hover:text-white">{item.label}</Link> : <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="hover:text-white">{item.label}</a>)}
+          {links.map((item) => item.url.startsWith('/') ? <Link key={`${item.label}-${item.url}`} to={item.url} className="hover:text-white">{item.label}</Link> : <a key={`${item.label}-${item.url}`} href={item.url} target="_blank" rel="noreferrer" className="hover:text-white">{item.label}</a>)}
           <Link to="/editor/signin" className="hover:text-white">Login as Nerd</Link>
           <Link to="/admin/login" className="hover:text-white">Admin</Link>
         </div>

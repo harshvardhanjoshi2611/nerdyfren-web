@@ -9,13 +9,13 @@ import {
   ReceiptIndianRupee,
   Smartphone,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import CopyButton from '../components/CopyButton';
 import Logo from '../components/Logo';
 import Modal from '../components/Modal';
 import useAuth from '../hooks/useAuth';
-import { getApiError, paymentsApi, userApi } from '../lib/api';
+import { getApiError, paymentsApi } from '../lib/api';
 import { formatMoney, serviceMeta } from '../lib/format';
 import { paymentConfig } from '../lib/paymentConfig';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
@@ -27,25 +27,10 @@ export default function BookingSuccessPage() {
   const booking = location.state || stored;
   const requestId = booking?.request_id || booking?.booking_ref || '';
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [numericBookingId, setNumericBookingId] = useState(
-    booking?.booking_id || booking?.id || '',
-  );
   const [payment, setPayment] = useState({ payment_reference: '', screenshot_url: '' });
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentResult, setPaymentResult] = useState(null);
-
-  useEffect(() => {
-    if (!user || !requestId || numericBookingId) return;
-    userApi.bookings()
-      .then((result) => {
-        const owned = result.bookings?.find((item) => (
-          (item.request_id || item.booking_ref) === requestId
-        ));
-        if (owned?.id) setNumericBookingId(owned.id);
-      })
-      .catch(() => {});
-  }, [numericBookingId, requestId, user]);
 
   const whatsappMessage = useMemo(
     () => buildCoordinatorMessage({
@@ -98,7 +83,8 @@ export default function BookingSuccessPage() {
     setPaymentError('');
     try {
       const result = await paymentsApi.notify({
-        booking_id: Number(numericBookingId),
+        request_id: requestId,
+        ...(booking.tracking_token ? { tracking_token: booking.tracking_token } : {}),
         payment_amount: Number(booking.amount),
         payment_reference: payment.payment_reference.trim(),
       });
@@ -205,9 +191,9 @@ export default function BookingSuccessPage() {
             </div>
           ) : (
             <form onSubmit={submitPayment} className="space-y-4">
-              {!numericBookingId && (
+              {!user && !booking.tracking_token && (
                 <p className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
-                  We could not connect this payment form to the request. Use the WhatsApp option above and share your Request ID.
+                  This browser no longer has the private booking confirmation. Use the WhatsApp option above and share your Request ID.
                 </p>
               )}
               <label>
@@ -236,7 +222,7 @@ export default function BookingSuccessPage() {
               {paymentError && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{paymentError}</p>}
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button type="button" onClick={() => setPaymentOpen(false)} className="btn-secondary">Cancel</button>
-                <button disabled={paymentBusy || !numericBookingId} className="btn-primary">
+                <button disabled={paymentBusy || !requestId || (!user && !booking.tracking_token)} className="btn-primary">
                   {paymentBusy ? <LoaderCircle className="animate-spin" size={16} /> : <ReceiptIndianRupee size={16} />}
                   Submit notification
                 </button>

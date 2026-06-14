@@ -13,6 +13,8 @@ export default function DashboardShell({ role, links, children }) {
   const navigate = useNavigate();
   const logout = () => {
     localStorage.removeItem(`nerdyfren_${role}_token`);
+    localStorage.removeItem(`nerdyfren_${role}_roles`);
+    localStorage.removeItem(`nerdyfren_${role}_profile`);
     navigate(role === 'editor' ? '/editor/signin' : role === 'super_admin' ? '/super-admin' : `/${role}/login`);
   };
   return (
