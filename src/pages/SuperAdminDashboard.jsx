@@ -1,5 +1,5 @@
 import { FileText, Gauge, Image, LayoutPanelTop, Link2, MessageCircleQuestion, Search, Settings, Share2, Star, Users, Video } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { ErrorState, LoadingState } from '../components/PageState';
@@ -20,7 +20,7 @@ const tabs = [
   ['Footer CMS', Link2],
   ['Social Links CMS', Share2],
   ['SEO Settings', Search],
-  ['User Management', Users],
+  ['Roles & Users', Users],
 ];
 
 export default function SuperAdminDashboard() {
@@ -45,14 +45,14 @@ export default function SuperAdminDashboard() {
   };
 
   return (
-    <DashboardShell role="super_admin" links={[{ label: 'CMS Control', to: '/super-admin', icon: FileText }]}>
+    <DashboardShell role="super_admin" links={[{ label: 'CMS Control', to: '/dashboard/super-admin', icon: FileText }]}>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={reload} /> : (
         <div className="mx-auto max-w-7xl">
           <div>
             <p className="text-sm text-violet-400">Super Admin control center</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Manage NerdyFren without a deployment.</h1>
             <p className="mt-2 text-sm text-slate-500">Content, services, links, SEO and operator access are stored in the database.</p>
-            <Link to="/admin" className="btn-secondary mt-5">Open Admin Operations & Reports</Link>
+            <Link to="/dashboard/admin" className="btn-secondary mt-5">Open Admin Operations & Reports</Link>
           </div>
           {notice && <div className="mt-6 rounded-xl border border-violet-400/20 bg-violet-500/10 p-3 text-sm text-violet-200">{notice}</div>}
           <div className="mt-8 flex gap-2 overflow-x-auto pb-2">
@@ -70,7 +70,7 @@ export default function SuperAdminDashboard() {
             {tab === 'Footer CMS' && <FooterEditor items={data.footer_links} busy={busy} save={save} />}
             {tab === 'Social Links CMS' && <SocialEditor items={data.social_links} busy={busy} save={save} />}
             {tab === 'SEO Settings' && <SeoEditor seo={data.seo} busy={busy} save={save} />}
-            {tab === 'User Management' && <UserManagement admins={data.admins} editors={data.editors} busy={busy} save={save} />}
+            {tab === 'Roles & Users' && <RoleManagement />}
           </div>
         </div>
       )}
@@ -157,12 +157,200 @@ function SeoEditor({ seo, busy, save }) {
   return <div className="panel p-6"><div className="grid gap-4 md:grid-cols-2">{fields.map((field) => <label key={field} className={field.includes('description') ? 'md:col-span-2' : ''}><span className="label capitalize">{field.replaceAll('_', ' ')}</span><textarea className="input min-h-20" value={value[field] || ''} onChange={(e) => setValue({ ...value, [field]: e.target.value })} /></label>)}</div><button disabled={busy} onClick={() => save(() => superAdminApi.upsertContent('seo', 'homepage', { content: value, is_active: true, display_order: 0 }), 'SEO settings saved.')} className="btn-primary mt-5">Save SEO</button></div>;
 }
 
-function UserManagement({ admins, editors, busy, save }) {
-  const [admin, setAdmin] = useState({ email: '', password: '' });
-  const [editor, setEditor] = useState({ name: '', email: '', mobile: '', password: '', skills: '' });
-  return <div className="grid gap-6 xl:grid-cols-2"><div className="space-y-4"><div className="panel p-5"><h2 className="font-semibold">Create Admin</h2><div className="mt-4 space-y-3"><input className="input" placeholder="Email" value={admin.email} onChange={(e) => setAdmin({ ...admin, email: e.target.value })} /><input type="password" className="input" placeholder="Temporary password" value={admin.password} onChange={(e) => setAdmin({ ...admin, password: e.target.value })} /></div><button disabled={busy} onClick={() => save(() => superAdminApi.createAdmin(admin), 'Admin created.')} className="btn-primary mt-4">Create Admin</button></div>{admins.map((item) => <AccountCard key={item.id} name={item.email} subtitle={item.role} active={Boolean(item.is_active)} disabled={item.role === 'super_admin'} onToggle={(active) => save(() => superAdminApi.updateAdmin(item.id, active))} />)}</div><div className="space-y-4"><div className="panel p-5"><h2 className="font-semibold">Create Nerd</h2><div className="mt-4 grid gap-3 sm:grid-cols-2"><input className="input" placeholder="Name" value={editor.name} onChange={(e) => setEditor({ ...editor, name: e.target.value })} /><input className="input" placeholder="Email" value={editor.email} onChange={(e) => setEditor({ ...editor, email: e.target.value })} /><input className="input" placeholder="Mobile" value={editor.mobile} onChange={(e) => setEditor({ ...editor, mobile: e.target.value })} /><input type="password" className="input" placeholder="Temporary password" value={editor.password} onChange={(e) => setEditor({ ...editor, password: e.target.value })} /><input className="input sm:col-span-2" placeholder="Skills, comma separated" value={editor.skills} onChange={(e) => setEditor({ ...editor, skills: e.target.value })} /></div><button disabled={busy} onClick={() => save(() => superAdminApi.createEditor({ ...editor, skills: editor.skills.split(',').map((skill) => skill.trim()).filter(Boolean) }), 'Nerd created.')} className="btn-primary mt-4">Create Nerd</button></div>{editors.map((item) => <AccountCard key={item.id} name={item.name} subtitle={item.email} active={Boolean(item.is_active)} onToggle={(active) => save(() => superAdminApi.updateEditor(item.id, active))} />)}</div></div>;
-}
+const assignableRoles = ['client', 'editor', 'admin', 'super_admin'];
 
-function AccountCard({ name, subtitle, active, disabled = false, onToggle }) {
-  return <div className="panel flex items-center justify-between p-4"><div><p className="font-medium">{name}</p><p className="mt-1 text-xs text-slate-600">{subtitle}</p></div><button disabled={disabled} onClick={() => onToggle(!active)} className={`rounded-lg px-3 py-2 text-xs font-medium ${active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'} disabled:opacity-40`}>{active ? 'Active' : 'Disabled'}</button></div>;
+function RoleManagement() {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [newRole, setNewRole] = useState('client');
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+
+  const search = useCallback(async (term) => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await superAdminApi.users({ search: term });
+      setUsers(result.users || []);
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Could not load users.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const openUser = async (id) => {
+    setBusy(`open-${id}`);
+    setError('');
+    try {
+      const result = await superAdminApi.user(id);
+      setSelected(result.user);
+      setNewRole(assignableRoles.find((role) => !result.user.roles.includes(role)) || 'client');
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Could not load that user.'));
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const changeRole = async (work, key) => {
+    setBusy(key);
+    setError('');
+    try {
+      const result = await work();
+      setSelected(result.user);
+      await search(query);
+    } catch (requestError) {
+      setError(getApiError(requestError));
+    } finally {
+      setBusy('');
+    }
+  };
+
+  useEffect(() => {
+    search('');
+  }, [search]);
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(420px,1.2fr)]">
+      <section className="panel p-5">
+        <h2 className="font-semibold">Find an existing user</h2>
+        <form
+          className="mt-4 flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            search(query);
+          }}
+        >
+          <input
+            className="input"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Name, email or mobile"
+          />
+          <button className="btn-secondary" disabled={loading}>Search</button>
+        </form>
+        {error && <p className="mt-4 rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+        <div className="mt-5 max-h-[620px] space-y-2 overflow-y-auto pr-1">
+          {loading ? <LoadingState label="Loading users" /> : users.map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => openUser(user.id)}
+              className={`w-full rounded-xl border p-4 text-left transition ${
+                selected?.id === user.id
+                  ? 'border-violet-400/40 bg-violet-500/10'
+                  : 'border-white/[0.07] bg-white/[0.025] hover:border-white/20'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{user.name}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{user.email || user.mobile}</p>
+                </div>
+                <span className="text-[10px] text-slate-600">
+                  {busy === `open-${user.id}` ? 'Loading...' : `#${user.id}`}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {user.roles.map((role) => (
+                  <span key={role} className="rounded-md bg-white/[0.05] px-2 py-1 text-[10px] text-slate-300">
+                    {role.replaceAll('_', ' ')}
+                  </span>
+                ))}
+              </div>
+            </button>
+          ))}
+          {!loading && !users.length && <p className="py-10 text-center text-sm text-slate-600">No users found.</p>}
+        </div>
+      </section>
+
+      <section className="panel p-5">
+        {!selected ? (
+          <div className="grid min-h-80 place-items-center text-center">
+            <div>
+              <Users className="mx-auto text-slate-700" />
+              <p className="mt-4 text-sm text-slate-500">Select a user to manage roles and view history.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <p className="text-xs uppercase tracking-[.16em] text-violet-400">Unified account</p>
+              <h3 className="mt-2 text-2xl font-semibold">{selected.name}</h3>
+              <p className="mt-1 text-sm text-slate-500">{selected.email || 'No email'} - {selected.mobile || 'No mobile'}</p>
+            </div>
+
+            <div className="mt-6">
+              <p className="label">Active roles</p>
+              <div className="mt-2 space-y-2">
+                {selected.roles.map((role) => (
+                  <div key={role} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
+                    <div>
+                      <p className="text-sm font-medium capitalize">{role.replaceAll('_', ' ')}</p>
+                      {selected.role_profiles?.[role] === 'incomplete' && (
+                        <p className="mt-1 text-xs text-amber-300">Profile incomplete</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => changeRole(
+                        () => superAdminApi.revokeRole(selected.id, role),
+                        `revoke-${role}`,
+                      )}
+                      className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300 disabled:opacity-40"
+                    >
+                      {busy === `revoke-${role}` ? 'Revoking...' : 'Revoke'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+              <p className="label">Grant another role</p>
+              <div className="mt-2 flex gap-2">
+                <select className="input" value={newRole} onChange={(event) => setNewRole(event.target.value)}>
+                  {assignableRoles.filter((role) => !selected.roles.includes(role)).map((role) => (
+                    <option key={role} value={role}>{role.replaceAll('_', ' ')}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={Boolean(busy) || selected.roles.length === assignableRoles.length}
+                  onClick={() => changeRole(
+                    () => superAdminApi.grantRole(selected.id, newRole),
+                    `grant-${newRole}`,
+                  )}
+                  className="btn-primary"
+                >
+                  {busy === `grant-${newRole}` ? 'Granting...' : 'Grant'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-7">
+              <p className="label">Role history</p>
+              <div className="mt-3 max-h-72 space-y-3 overflow-y-auto border-l border-violet-400/20 pl-4">
+                {selected.role_history.map((item) => (
+                  <div key={item.id}>
+                    <p className="text-sm text-slate-300">
+                      <span className="capitalize">{item.role.replaceAll('_', ' ')}</span> {item.action}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {new Date(item.created_at).toLocaleString()} - {item.changed_by_name || item.changed_by_email || 'System migration'}
+                    </p>
+                  </div>
+                ))}
+                {!selected.role_history.length && <p className="text-sm text-slate-600">No role changes recorded.</p>}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+    </div>
+  );
 }

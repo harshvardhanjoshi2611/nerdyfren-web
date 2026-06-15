@@ -2,6 +2,7 @@ import { LogOut } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import RoleSwitcher from './RoleSwitcher';
+import useAuth from '../hooks/useAuth';
 
 const roleLabels = {
   editor: 'Nerd',
@@ -11,11 +12,10 @@ const roleLabels = {
 
 export default function DashboardShell({ role, links, children }) {
   const navigate = useNavigate();
-  const logout = () => {
-    localStorage.removeItem(`nerdyfren_${role}_token`);
-    localStorage.removeItem(`nerdyfren_${role}_roles`);
-    localStorage.removeItem(`nerdyfren_${role}_profile`);
-    navigate(role === 'editor' ? '/editor/signin' : role === 'super_admin' ? '/super-admin' : `/${role}/login`);
+  const { endSession } = useAuth();
+  const logout = async () => {
+    await endSession();
+    navigate('/signin');
   };
   return (
     <div className="min-h-screen bg-canvas">
@@ -36,7 +36,7 @@ export default function DashboardShell({ role, links, children }) {
           <div className="lg:hidden"><Logo compact /></div>
           <p className="hidden text-xs font-medium uppercase tracking-[0.18em] text-slate-600 sm:block">NerdyFren / {roleLabels[role] || role}</p>
           <div className="flex items-center gap-3">
-            <RoleSwitcher currentRole={role} />
+            <RoleSwitcher />
             <button onClick={logout} className="text-sm text-slate-500 hover:text-white lg:hidden">Sign out</button>
           </div>
           <span className="hidden h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.7)] lg:block" />

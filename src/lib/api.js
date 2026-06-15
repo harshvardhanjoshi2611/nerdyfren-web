@@ -2,6 +2,7 @@ import axios from 'axios';
 import { runtimeConfig } from './runtimeConfig';
 
 const API_PREFIX = '/api/v1';
+export const AUTH_TOKEN_KEY = 'nerdyfren_auth_token';
 
 export const API_ENDPOINTS = Object.freeze({
   services: `${API_PREFIX}/services`,
@@ -15,16 +16,15 @@ export const API_ENDPOINTS = Object.freeze({
   authResetPassword: `${API_PREFIX}/auth/reset-password`,
   authLogout: `${API_PREFIX}/auth/logout`,
   authMe: `${API_PREFIX}/auth/me`,
+  authSwitchRole: `${API_PREFIX}/auth/switch-role`,
   userBookings: `${API_PREFIX}/user/bookings`,
   userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
   userBookingRevision: (id) => `${API_PREFIX}/user/bookings/${id}/revision`,
   paymentNotify: `${API_PREFIX}/payments/notify`,
   clientApprove: `${API_PREFIX}/client/approve`,
   clientRevision: `${API_PREFIX}/client/revision`,
-  adminLogin: `${API_PREFIX}/admin/login`,
   adminForgotPassword: `${API_PREFIX}/admin/forgot-password`,
   adminResetPassword: `${API_PREFIX}/admin/reset-password`,
-  editorLogin: `${API_PREFIX}/editor/login`,
   editorForgotPassword: `${API_PREFIX}/editor/forgot-password`,
   editorResetPassword: `${API_PREFIX}/editor/reset-password`,
   editorProfile: `${API_PREFIX}/editor/me`,
@@ -52,7 +52,6 @@ export const API_ENDPOINTS = Object.freeze({
   adminApplicationApproval: (id) => `${API_PREFIX}/admin/applications/${id}/approve`,
   adminApplicationRejection: (id) => `${API_PREFIX}/admin/applications/${id}/reject`,
   adminEditorDeactivation: (id) => `${API_PREFIX}/admin/editors/${id}/deactivate`,
-  superAdminLogin: `${API_PREFIX}/super-admin/login`,
   superAdminForgotPassword: `${API_PREFIX}/super-admin/forgot-password`,
   superAdminResetPassword: `${API_PREFIX}/super-admin/reset-password`,
   superAdminCms: `${API_PREFIX}/super-admin/cms`,
@@ -68,6 +67,10 @@ export const API_ENDPOINTS = Object.freeze({
   superAdminEditor: (id) => `${API_PREFIX}/super-admin/editors/${id}`,
   superAdminAuditLogs: `${API_PREFIX}/super-admin/audit-logs`,
   superAdminAuditExport: `${API_PREFIX}/super-admin/exports/audit`,
+  superAdminUsers: `${API_PREFIX}/super-admin/users`,
+  superAdminUser: (id) => `${API_PREFIX}/super-admin/users/${id}`,
+  superAdminUserRoles: (id) => `${API_PREFIX}/super-admin/users/${id}/roles`,
+  superAdminUserRole: (id, role) => `${API_PREFIX}/super-admin/users/${id}/roles/${role}`,
 });
 
 export const api = axios.create({
@@ -76,34 +79,18 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-function clearWorkspaceSession(role) {
-  localStorage.removeItem(`nerdyfren_${role}_token`);
-  localStorage.removeItem(`nerdyfren_${role}_roles`);
-  localStorage.removeItem(`nerdyfren_${role}_profile`);
+export function clearAuthSession() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  for (const role of ['user', 'client', 'editor', 'admin', 'super_admin']) {
+    localStorage.removeItem(`nerdyfren_${role}_token`);
+    localStorage.removeItem(`nerdyfren_${role}_roles`);
+    localStorage.removeItem(`nerdyfren_${role}_profile`);
+  }
+  window.dispatchEvent(new Event('nerdyfren:auth-cleared'));
 }
 
 api.interceptors.request.use((config) => {
-  const isUserRequest = config.url === API_ENDPOINTS.bookings
-    || config.url?.startsWith(`${API_PREFIX}/bookings/track/`)
-    || config.url === API_ENDPOINTS.paymentNotify
-    || config.url?.startsWith(`${API_PREFIX}/client`)
-    || config.url === API_ENDPOINTS.authLogout
-    || config.url === API_ENDPOINTS.authMe
-    || config.url?.startsWith(`${API_PREFIX}/user`);
-  const area = config.url?.startsWith(`${API_PREFIX}/super-admin`)
-    ? 'super_admin'
-    : config.url?.startsWith(`${API_PREFIX}/admin`)
-    ? 'admin'
-    : config.url?.startsWith(`${API_PREFIX}/editor`)
-      ? 'editor'
-      : isUserRequest
-        ? 'user'
-        : null;
-  const token = area === 'admin'
-    ? localStorage.getItem('nerdyfren_admin_token') || localStorage.getItem('nerdyfren_super_admin_token')
-    : area
-      ? localStorage.getItem(`nerdyfren_${area}_token`)
-      : null;
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -112,17 +99,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (error.config?.url?.startsWith(`${API_PREFIX}/admin`)) clearWorkspaceSession('admin');
-      if (error.config?.url?.startsWith(`${API_PREFIX}/super-admin`)) clearWorkspaceSession('super_admin');
-      if (error.config?.url?.startsWith(`${API_PREFIX}/editor`)) clearWorkspaceSession('editor');
-      if (
-        error.config?.url === API_ENDPOINTS.paymentNotify
-        || error.config?.url?.startsWith(`${API_PREFIX}/bookings/track/`)
-        || error.config?.url?.startsWith(`${API_PREFIX}/client`)
-        || error.config?.url === API_ENDPOINTS.authLogout
-        || error.config?.url === API_ENDPOINTS.authMe
-        || error.config?.url?.startsWith(`${API_PREFIX}/user`)
-      ) clearWorkspaceSession('user');
+      if (error.response?.data?.code === 'ROLE_REVOKED') {
+        window.dispatchEvent(new Event('nerdyfren:role-revoked'));
+      } else {
+        clearAuthSession();
+      }
     }
     return Promise.reject(error);
   },
@@ -144,6 +125,11 @@ export function getApiError(error, fallback = 'Something went wrong. Please try 
     EDITOR_NOT_FOUND: 'That editor is unavailable.',
     EMAIL_EXISTS: 'An account already exists with that email.',
     FORBIDDEN: 'You do not have permission to perform this action.',
+    ROLE_NOT_ASSIGNED: 'That workspace is not assigned to your account.',
+    ROLE_REVOKED: 'That workspace is no longer assigned to your account.',
+    EDITOR_PROFILE_INCOMPLETE: 'Complete your Nerd profile before opening the editor workspace.',
+    LAST_SUPER_ADMIN: 'The last active Super Admin cannot be removed.',
+    INVALID_ROLE: 'Select a valid role.',
     INVALID_CREDENTIALS: 'Your email or password is incorrect.',
     INVALID_SERVICE: 'That service is currently unavailable.',
     INVALID_STATUS_TRANSITION: 'This project is not ready for that action.',
@@ -226,6 +212,7 @@ export const authApi = {
   resetPassword: (data) => api.post(API_ENDPOINTS.authResetPassword, data).then((r) => expectObject(r.data, 'password reset')),
   logout: () => api.post(API_ENDPOINTS.authLogout).then((r) => r.data),
   me: () => api.get(API_ENDPOINTS.authMe).then((r) => expectObject(r.data, 'profile')),
+  switchRole: (role) => api.post(API_ENDPOINTS.authSwitchRole, { role }).then((r) => expectObject(r.data, 'role switch')),
 };
 
 export const userApi = {
@@ -235,7 +222,6 @@ export const userApi = {
 };
 
 export const editorApi = {
-  login: (data) => api.post(API_ENDPOINTS.editorLogin, data).then((r) => r.data),
   forgotPassword: (data) => api.post(API_ENDPOINTS.editorForgotPassword, data).then((r) => r.data),
   resetPassword: (data) => api.post(API_ENDPOINTS.editorResetPassword, data).then((r) => r.data),
   profile: () => api.get(API_ENDPOINTS.editorProfile).then((r) => r.data),
@@ -247,7 +233,6 @@ export const editorApi = {
 };
 
 export const adminApi = {
-  login: (data) => api.post(API_ENDPOINTS.adminLogin, data).then((r) => r.data),
   forgotPassword: (data) => api.post(API_ENDPOINTS.adminForgotPassword, data).then((r) => r.data),
   resetPassword: (data) => api.post(API_ENDPOINTS.adminResetPassword, data).then((r) => r.data),
   stats: () => api.get(API_ENDPOINTS.adminStats).then((r) => r.data),
@@ -273,7 +258,6 @@ export const adminApi = {
 };
 
 export const superAdminApi = {
-  login: (data) => api.post(API_ENDPOINTS.superAdminLogin, data).then((r) => r.data),
   forgotPassword: (data) => api.post(API_ENDPOINTS.superAdminForgotPassword, data).then((r) => r.data),
   resetPassword: (data) => api.post(API_ENDPOINTS.superAdminResetPassword, data).then((r) => r.data),
   cms: () => api.get(API_ENDPOINTS.superAdminCms).then((r) => r.data),
@@ -290,4 +274,8 @@ export const superAdminApi = {
   updateEditor: (id, isActive) => api.patch(API_ENDPOINTS.superAdminEditor(id), { is_active: isActive }).then((r) => r.data),
   auditLogs: (params) => api.get(API_ENDPOINTS.superAdminAuditLogs, { params }).then((r) => r.data),
   exportAudit: (params) => api.get(API_ENDPOINTS.superAdminAuditExport, { params, responseType: 'blob' }),
+  users: (params) => api.get(API_ENDPOINTS.superAdminUsers, { params }).then((r) => r.data),
+  user: (id) => api.get(API_ENDPOINTS.superAdminUser(id)).then((r) => r.data),
+  grantRole: (id, role) => api.post(API_ENDPOINTS.superAdminUserRoles(id), { role }).then((r) => r.data),
+  revokeRole: (id, role) => api.delete(API_ENDPOINTS.superAdminUserRole(id, role)).then((r) => r.data),
 };

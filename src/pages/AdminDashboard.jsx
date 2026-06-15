@@ -21,15 +21,17 @@ import { formatDateTime, formatMoney, getProjectName, humanize, serviceMeta } fr
 import { AuditPanel, ExportPanel, LeadsPanel, OperationsPanel, ReportsPanel, WorkloadPanel } from '../components/OperationsPanels';
 import { servicesApi } from '../lib/api';
 import { getProjectLinkLabel } from '../lib/projectLinks';
+import useAuth from '../hooks/useAuth';
 
-const links = [{ label: 'Operations', to: '/admin', icon: LayoutDashboard }];
+const links = [{ label: 'Operations', to: '/dashboard/admin', icon: LayoutDashboard }];
 const projectStatuses = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed', 'cancelled'];
 
 export default function AdminDashboard() {
+  const { roles } = useAuth();
   const [tab, setTab] = useState('Projects');
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
-  const isSuperAdmin = Boolean(localStorage.getItem('nerdyfren_super_admin_token'));
+  const isSuperAdmin = roles.includes('super_admin');
   const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
   const { data, loading, error, reload } = useFetch(async () => {
     const [stats, bookings, payments, editors, services] = await Promise.all([
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <DashboardShell role={isSuperAdmin ? 'super_admin' : 'admin'} links={links}>
+    <DashboardShell role="admin" links={links}>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={reload} /> : (
         <div className="mx-auto max-w-[1600px]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

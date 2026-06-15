@@ -17,7 +17,7 @@ import { editorApi, getApiError } from '../lib/api';
 import { formatDate, formatDateTime, humanize, serviceMeta } from '../lib/format';
 import { getProjectLinkLabel } from '../lib/projectLinks';
 
-const links = [{ label: 'Overview', to: '/editor/dashboard', icon: LayoutDashboard }];
+const links = [{ label: 'Overview', to: '/dashboard/editor', icon: LayoutDashboard }];
 const allowed = {
   assigned: ['work_in_progress'],
   awaiting_revision: ['work_in_progress'],
@@ -51,7 +51,7 @@ export default function ProjectDetailsPage() {
     <DashboardShell role="editor" links={links}>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={reload} /> : (
         <div className="mx-auto max-w-6xl">
-          <Link to="/editor/dashboard" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-white"><ArrowLeft size={16} /> All projects</Link>
+          <Link to="/dashboard/editor" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-white"><ArrowLeft size={16} /> All projects</Link>
           <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-3"><span className="text-xs text-slate-600">{project.booking_ref}</span><StatusBadge status={project.status} /></div>

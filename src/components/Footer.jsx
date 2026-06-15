@@ -3,6 +3,7 @@ import Logo from './Logo';
 import useAuth from '../hooks/useAuth';
 import useSiteContent from '../hooks/useSiteContent';
 import { buildWhatsAppLink, publicContactConfig } from '../lib/contactConfig';
+import { getRolePath } from '../lib/roleNavigation';
 
 const managedLabels = new Set([
   'instagram',
@@ -26,7 +27,7 @@ function isSafePublicLink(url) {
 }
 
 export default function Footer() {
-  const { isAuthenticated } = useAuth();
+  const { activeRole, isAuthenticated } = useAuth();
   const { content } = useSiteContent();
   const links = (content?.footer_links || []).filter((item) => (
     isSafePublicLink(item.url)
@@ -48,7 +49,7 @@ export default function Footer() {
         </div>
         <div className="flex flex-wrap gap-5 text-sm text-slate-500">
           <Link to="/services" className="hover:text-white">Services</Link>
-          <Link to={isAuthenticated ? '/dashboard' : '/track'} className="hover:text-white">Track order</Link>
+          <Link to={isAuthenticated ? getRolePath(activeRole) : '/track'} className="hover:text-white">Track order</Link>
           <Link to="/privacy" className="hover:text-white">Privacy</Link>
           <Link to="/terms" className="hover:text-white">Terms</Link>
           <Link to="/refund" className="hover:text-white">Refund policy</Link>
@@ -56,8 +57,8 @@ export default function Footer() {
             <a key={label} href={url} target="_blank" rel="noreferrer" className="hover:text-white">{label}</a>
           ))}
           {links.map((item) => item.url.startsWith('/') ? <Link key={`${item.label}-${item.url}`} to={item.url} className="hover:text-white">{item.label}</Link> : <a key={`${item.label}-${item.url}`} href={item.url} target="_blank" rel="noreferrer" className="hover:text-white">{item.label}</a>)}
-          <Link to="/editor/signin" className="hover:text-white">Login as Nerd</Link>
-          <Link to="/admin/login" className="hover:text-white">Admin</Link>
+          <Link to="/signin" className="hover:text-white">Login as Nerd</Link>
+          <Link to="/signin" className="hover:text-white">Admin</Link>
         </div>
       </div>
     </footer>

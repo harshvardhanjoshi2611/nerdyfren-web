@@ -52,7 +52,7 @@ export default function UserDashboard() {
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-3">
-            <RoleSwitcher currentRole="user" user={user} />
+            <RoleSwitcher />
             <Link to="/booking" className="btn-primary !px-3 !py-2 sm:!px-4"><Plus size={16} /> <span className="hidden sm:inline">New project</span></Link>
             <button onClick={endSession} className="rounded-lg p-2.5 text-slate-500 transition hover:bg-white/5 hover:text-white" aria-label="Sign out"><LogOut size={18} /></button>
           </div>

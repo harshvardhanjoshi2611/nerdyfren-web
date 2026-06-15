@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import Logo from './Logo';
 import useAuth from '../hooks/useAuth';
+import { getRolePath } from '../lib/roleNavigation';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, endSession } = useAuth();
+  const { activeRole, isAuthenticated, endSession } = useAuth();
+  const dashboardPath = getRolePath(activeRole);
   const links = [
     ['Services', '/services'],
     ...(!isAuthenticated ? [['Track order', '/track']] : []),
@@ -25,8 +27,8 @@ export default function Navbar() {
         <div className="hidden items-center gap-2 md:flex">
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="btn-secondary !px-4 !py-2.5">Dashboard</Link>
-              <Link to="/dashboard#bookings" className="px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white">Track Project</Link>
+              <Link to={dashboardPath} className="btn-secondary !px-4 !py-2.5">Dashboard</Link>
+              {activeRole === 'client' && <Link to="/dashboard/client#bookings" className="px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white">Track Project</Link>}
               <button onClick={endSession} className="rounded-lg p-2.5 text-slate-500 hover:text-white" aria-label="Sign out"><LogOut size={17} /></button>
             </>
           ) : (
@@ -47,8 +49,8 @@ export default function Navbar() {
             {links.map(([label, href]) => <Link key={href} to={href} onClick={() => setOpen(false)} className="text-sm text-slate-300">{label}</Link>)}
             {isAuthenticated ? (
               <>
-                <Link to="/dashboard" onClick={() => setOpen(false)} className="text-sm text-slate-300">Dashboard</Link>
-                <Link to="/dashboard#bookings" onClick={() => setOpen(false)} className="text-sm text-slate-300">Track Project</Link>
+                <Link to={dashboardPath} onClick={() => setOpen(false)} className="text-sm text-slate-300">Dashboard</Link>
+                {activeRole === 'client' && <Link to="/dashboard/client#bookings" onClick={() => setOpen(false)} className="text-sm text-slate-300">Track Project</Link>}
                 <button onClick={() => { endSession(); setOpen(false); }} className="text-left text-sm text-slate-300">Sign out</button>
               </>
             ) : (

@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import useAuth from '../hooks/useAuth';
 import { authApi, getApiError } from '../lib/api';
+import { getRolePath } from '../lib/roleNavigation';
 
 export default function UserAuthPage({ mode }) {
   const isSignup = mode === 'signup';
@@ -25,7 +26,10 @@ export default function UserAuthPage({ mode }) {
         ? await authApi.signup({ name: form.name, password: form.password, ...contact })
         : await authApi.login({ identifier: form.identifier, password: form.password });
       startSession(result);
-      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+      navigate(
+        location.state?.from?.pathname || getRolePath(result.activeRole),
+        { replace: true },
+      );
     } catch (requestError) {
       setError(getApiError(requestError, isSignup ? 'Account creation failed.' : 'Sign in failed.'));
     } finally {
@@ -38,14 +42,14 @@ export default function UserAuthPage({ mode }) {
       <div className="flex flex-col px-5 py-7 sm:px-10">
         <Logo />
         <div className="mx-auto my-auto w-full max-w-md py-14">
-          <span className="eyebrow"><UserRound size={13} /> Creator account</span>
+          <span className="eyebrow"><UserRound size={13} /> One NerdyFren account</span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight">
             {isSignup ? 'Your projects, in one place.' : 'Welcome back.'}
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">
             {isSignup
               ? 'Create an account to keep every booking and Request ID together.'
-              : 'Sign in with the email or mobile number linked to your account.'}
+              : 'Sign in once, then move between every workspace assigned to your account.'}
           </p>
 
           <div className="mt-8 grid grid-cols-2 rounded-xl border border-white/10 bg-white/[0.03] p-1">

@@ -17,7 +17,7 @@ import { useFetch } from '../hooks/useFetch';
 import { editorApi } from '../lib/api';
 import { formatDate, formatMoney, serviceMeta } from '../lib/format';
 
-const links = [{ label: 'Overview', to: '/editor/dashboard', icon: LayoutDashboard }];
+const links = [{ label: 'Overview', to: '/dashboard/editor', icon: LayoutDashboard }];
 const deliveryStatuses = ['assigned', 'work_in_progress', 'awaiting_revision', 'draft_submitted'];
 
 export default function EditorDashboard() {
@@ -64,7 +64,7 @@ export default function EditorDashboard() {
               </div>
             ) : data.projects.map((project) => (
               <article key={project.id} className="panel flex flex-col gap-5 p-5 transition hover:border-cyan-400/20 sm:flex-row sm:items-center">
-                <Link to={`/editor/projects/${project.id}`} className="contents group">
+                <Link to={`/dashboard/editor/projects/${project.id}`} className="contents group">
                   <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 text-sm font-semibold text-cyan-300">{project.booking_ref.slice(-2)}</div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
@@ -81,7 +81,7 @@ export default function EditorDashboard() {
                       <Send size={14} /> Submit Delivery
                     </button>
                   )}
-                  <Link to={`/editor/projects/${project.id}`} aria-label="Open project" className="rounded-lg p-2 text-slate-700 transition hover:bg-white/5 hover:text-cyan-400">
+                  <Link to={`/dashboard/editor/projects/${project.id}`} aria-label="Open project" className="rounded-lg p-2 text-slate-700 transition hover:bg-white/5 hover:text-cyan-400">
                     <ArrowRight size={17} />
                   </Link>
                 </div>

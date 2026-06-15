@@ -1,12 +1,10 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
-import UserProtectedRoute from './components/UserProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import BookingPage from './pages/BookingPage';
 import BookingSuccessPage from './pages/BookingSuccessPage';
 import EditorDashboard from './pages/EditorDashboard';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import ServicesPage from './pages/ServicesPage';
@@ -37,35 +35,48 @@ export default function App() {
       <Route path="/signup" element={<UserAuthPage mode="signup" />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
       <Route path="/reset-password" element={<PasswordRecoveryPage mode="reset" />} />
-      <Route element={<UserProtectedRoute />}>
-        <Route path="/dashboard" element={<UserDashboard />} />
+      <Route element={<ProtectedRoute role="client" />}>
+        <Route path="/dashboard/client" element={<UserDashboard />} />
       </Route>
-      <Route path="/editor/signin" element={<LoginPage role="editor" />} />
-      <Route path="/editor/login" element={<LoginPage role="editor" />} />
+      <Route path="/dashboard" element={<Navigate to="/dashboard/client" replace />} />
+      <Route path="/editor/signin" element={<Navigate to="/signin" replace />} />
+      <Route path="/editor/login" element={<Navigate to="/signin" replace />} />
       <Route path="/editor/forgot-password" element={<PasswordRecoveryPage role="editor" />} />
       <Route path="/editor/reset-password" element={<PasswordRecoveryPage role="editor" mode="reset" />} />
       <Route element={<ProtectedRoute role="editor" />}>
-        <Route path="/editor/dashboard" element={<EditorDashboard />} />
-        <Route path="/editor" element={<EditorDashboard />} />
-        <Route path="/editor/projects/:id" element={<ProjectDetailsPage />} />
+        <Route path="/dashboard/editor" element={<EditorDashboard />} />
+        <Route path="/dashboard/editor/projects/:id" element={<ProjectDetailsPage />} />
       </Route>
-      <Route path="/admin/login" element={<LoginPage role="admin" />} />
+      <Route path="/editor/dashboard" element={<Navigate to="/dashboard/editor" replace />} />
+      <Route path="/editor" element={<Navigate to="/dashboard/editor" replace />} />
+      <Route path="/editor/projects/:id" element={<EditorProjectRedirect />} />
+      <Route path="/admin/signin" element={<Navigate to="/signin" replace />} />
+      <Route path="/admin/login" element={<Navigate to="/signin" replace />} />
       <Route path="/admin/forgot-password" element={<PasswordRecoveryPage role="admin" />} />
       <Route path="/admin/reset-password" element={<PasswordRecoveryPage role="admin" mode="reset" />} />
       <Route element={<ProtectedRoute role="admin" />}>
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
       </Route>
-      <Route path="/super-admin" element={<LoginPage role="super_admin" />} />
-      <Route path="/superadmin" element={<LoginPage role="super_admin" />} />
+      <Route path="/admin" element={<Navigate to="/dashboard/admin" replace />} />
+      <Route path="/super-admin/signin" element={<Navigate to="/signin" replace />} />
+      <Route path="/superadmin/signin" element={<Navigate to="/signin" replace />} />
       <Route path="/super-admin/forgot-password" element={<PasswordRecoveryPage role="super_admin" />} />
       <Route path="/super-admin/reset-password" element={<PasswordRecoveryPage role="super_admin" mode="reset" />} />
       <Route element={<ProtectedRoute role="super_admin" />}>
-        <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
-        <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/dashboard/super-admin" element={<SuperAdminDashboard />} />
       </Route>
+      <Route path="/super-admin" element={<Navigate to="/dashboard/super-admin" replace />} />
+      <Route path="/superadmin" element={<Navigate to="/dashboard/super-admin" replace />} />
+      <Route path="/super-admin/dashboard" element={<Navigate to="/dashboard/super-admin" replace />} />
+      <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard/super-admin" replace />} />
       <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <FloatingWhatsApp />
     </>
   );
+}
+
+function EditorProjectRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard/editor/projects/${id}`} replace />;
 }
