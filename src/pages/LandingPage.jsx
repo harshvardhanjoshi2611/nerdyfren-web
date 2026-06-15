@@ -18,18 +18,54 @@ export default function LandingPage() {
     <div className="noise min-h-screen overflow-hidden bg-canvas">
       <Navbar />
       <main>
-        <section className="aurora relative flex min-h-[620px] items-center overflow-hidden pb-16 pt-20">
-          <div className="absolute inset-0 bg-grid bg-[size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
+        <section className="aurora relative min-h-[640px] overflow-hidden pb-12 pt-16 lg:min-h-[660px]">
+          <div className="absolute inset-0 bg-grid bg-[size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_90%)]" />
           <div className="container-shell relative">
-            <div className="mx-auto max-w-5xl text-center">
-              {hero.eyebrow && <span className="eyebrow"><Sparkles size={13} /> {hero.eyebrow}</span>}
-              <h1 className="mt-5 text-5xl font-extrabold leading-[.98] tracking-[-0.055em] sm:text-6xl lg:text-6xl">{hero.title}</h1>
-              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-400">{hero.subtitle}</p>
-              <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link to={hero.cta_url || '/book'} className="btn-primary !px-6 !py-3.5">{hero.cta_text} <ArrowRight size={17} /></Link>
-                <Link to="/services" className="btn-secondary !px-6 !py-3.5">Explore services</Link>
+            <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+              {/* Left Column: Content */}
+              <div className="flex flex-col justify-center">
+                {hero.eyebrow && <span className="eyebrow w-fit"><Sparkles size={13} /> {hero.eyebrow}</span>}
+                <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-[-0.055em] sm:text-5xl lg:text-6xl">{hero.title}</h1>
+                <p className="mt-5 text-base leading-7 text-slate-400 sm:text-lg">{hero.subtitle}</p>
+                
+                {/* Trust Pills */}
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2">
+                    <UserRoundCheck size={14} className="text-emerald-300" />
+                    <span className="text-xs font-medium text-slate-300">Human editors</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2">
+                    <Film size={14} className="text-cyan-300" />
+                    <span className="text-xs font-medium text-slate-300">Track progress</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2">
+                    <CheckCircle2 size={14} className="text-violet-300" />
+                    <span className="text-xs font-medium text-slate-300">Revision-ready</span>
+                  </div>
+                </div>
+
+                {/* CTAs */}
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Link to={hero.cta_url || '/book'} className="btn-primary !px-6 !py-3">{hero.cta_text} <ArrowRight size={17} /></Link>
+                  <Link to="/services" className="btn-secondary !px-6 !py-3">Explore services</Link>
+                </div>
               </div>
-              {visuals.hero_media_url && <div className="panel mx-auto mt-8 max-w-[1000px] overflow-hidden rounded-2xl border border-white/[0.08] p-2"><CmsMedia url={visuals.hero_media_url} type={visuals.hero_media_type} alt={hero.title} className="h-auto w-full max-h-[360px] rounded-xl object-cover sm:max-h-[400px]" /></div>}
+
+              {/* Right Column: Hero Image */}
+              {visuals.hero_media_url && (
+                <div className="flex justify-center lg:justify-end">
+                  <div className="panel w-full max-w-[560px] overflow-hidden border border-white/[0.1] bg-white/[0.04] p-1">
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 to-cyan-500/5">
+                      <CmsMedia 
+                        url={visuals.hero_media_url} 
+                        type={visuals.hero_media_type} 
+                        alt={hero.title} 
+                        className="h-[240px] w-full object-cover sm:h-[300px] lg:h-[380px]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
