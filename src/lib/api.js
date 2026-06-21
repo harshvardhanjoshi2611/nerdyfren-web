@@ -21,6 +21,8 @@ export const API_ENDPOINTS = Object.freeze({
   userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
   userBookingRevision: (id) => `${API_PREFIX}/user/bookings/${id}/revision`,
   paymentNotify: `${API_PREFIX}/payments/notify`,
+  razorpayCreateOrder: `${API_PREFIX}/payments/razorpay/create-order`,
+  razorpayVerify: `${API_PREFIX}/payments/razorpay/verify`,
   clientApprove: `${API_PREFIX}/client/approve`,
   clientRevision: `${API_PREFIX}/client/revision`,
   adminForgotPassword: `${API_PREFIX}/admin/forgot-password`,
@@ -137,7 +139,11 @@ export function getApiError(error, fallback = 'Something went wrong. Please try 
     MISSING_BRIEF: 'Add a project brief before continuing.',
     NOT_ASSIGNED: 'Assign this project before continuing.',
     PAYMENT_ALREADY_VERIFIED: 'This payment has already been verified.',
+    PAYMENT_ORDER_NOT_FOUND: 'That payment session is no longer available. Please try again.',
+    PAYMENT_PROVIDER_ERROR: 'Razorpay could not start the payment. Please try again.',
+    PAYMENT_PROVIDER_UNAVAILABLE: 'Online payment is temporarily unavailable. Please contact support.',
     PAYMENT_REFERENCE_REQUIRED: 'A payment reference is required.',
+    PAYMENT_SIGNATURE_INVALID: 'The payment could not be verified. No booking was marked paid.',
     PAYMENT_REQUIRED: 'Payment must be confirmed before assignment.',
     PROJECT_NOT_FOUND: 'That project is unavailable or is not assigned to you.',
     RATE_LIMITED: 'Too many attempts. Wait a few minutes and try again.',
@@ -194,6 +200,14 @@ export const bookingsApi = {
 
 export const paymentsApi = {
   notify: (data) => api.post(API_ENDPOINTS.paymentNotify, data).then((r) => expectObject(r.data, 'payment notification')),
+  createRazorpayOrder: (requestId) => api.post(
+    API_ENDPOINTS.razorpayCreateOrder,
+    { request_id: requestId },
+  ).then((r) => expectObject(r.data, 'Razorpay order')),
+  verifyRazorpay: (data) => api.post(
+    API_ENDPOINTS.razorpayVerify,
+    data,
+  ).then((r) => expectObject(r.data, 'Razorpay verification')),
 };
 
 export const clientApi = {

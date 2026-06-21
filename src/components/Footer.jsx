@@ -22,10 +22,10 @@ function isSafePublicLink(url) {
 
 function FooterLink({ label, url, badge }) {
   if (!isSafePublicLink(url)) {
-    return badge ? <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">{label}<span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">{badge}</span></span> : null;
+    return badge ? <span className="nf-footer-link is-muted">{label}<span className="nf-footer-badge">{badge}</span></span> : null;
   }
-  const className = "inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-white";
-  const content = <>{label}{badge && <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">{badge}</span>}</>;
+  const className = 'nf-footer-link';
+  const content = <>{label}{badge && <span className="nf-footer-badge">{badge}</span>}</>;
   return url.startsWith('/')
     ? <Link to={url} className={className}>{content}</Link>
     : <a href={url} target="_blank" rel="noreferrer" className={className}>{content}<ArrowUpRight size={12} /></a>;
@@ -65,25 +65,28 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/[0.07] bg-black/20 py-14 sm:py-16">
-      <div className="container-shell grid gap-12 lg:grid-cols-[1.35fr_2fr]">
-        <div>
-          <Logo />
-          <p className="mt-5 text-xl font-semibold tracking-tight text-slate-300">You shoot. We edit.</p>
-          {supportEmail && <a href={`mailto:${supportEmail}`} className="mt-3 block text-sm text-slate-600 transition hover:text-white">{supportEmail}</a>}
-        </div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
+    <footer className="nf-footer">
+      <div className="nf-container">
+        <div className="nf-footer-grid">
+          <div className="nf-footer-brand">
+            <Logo tone="inverse" />
+            <p>You shoot. We edit.<br />Post-production built for creators.</p>
+            {supportEmail && <a href={`mailto:${supportEmail}`} className="nf-footer-email">{supportEmail}</a>}
+          </div>
           {groups.map(([title, links]) => (
-            <div key={title}>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">{title}</p>
-              <div className="mt-5 flex flex-col items-start gap-3.5">
+            <div className="nf-footer-column" key={title}>
+              <h2>{title}</h2>
+              <div>
                 {links.map(([label, url, badge]) => <FooterLink key={label} label={label} url={url} badge={badge} />)}
               </div>
             </div>
           ))}
         </div>
+        <div className="nf-footer-bottom">
+          <span>© {new Date().getFullYear()} NerdyFren.com · All rights reserved</span>
+          <span>Made for creators who just want to post.</span>
+        </div>
       </div>
-      <div className="container-shell mt-12 border-t border-white/[0.07] pt-6 text-xs text-slate-700">© {new Date().getFullYear()} NerdyFren.com</div>
     </footer>
   );
 }

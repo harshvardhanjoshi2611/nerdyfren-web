@@ -45,6 +45,7 @@ const configuredSiteUrl = normalizeHttpOrigin(import.meta.env.VITE_SITE_URL);
 const siteUrl = configuredSiteUrl || currentOrigin;
 const whatsappNumber = clean(import.meta.env.VITE_WHATSAPP_NUMBER).replace(/\D/g, '');
 const validWhatsAppNumber = /^\d{8,15}$/.test(whatsappNumber) ? whatsappNumber : '';
+const razorpayKeyId = clean(import.meta.env.VITE_RAZORPAY_KEY_ID);
 const configuredSupportEmail = clean(import.meta.env.VITE_SUPPORT_EMAIL).toLowerCase();
 const supportEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredSupportEmail)
   ? configuredSupportEmail
@@ -69,6 +70,7 @@ export const runtimeConfig = Object.freeze({
     ? 'VITE_API_URL is missing or invalid. Configure the production API origin and redeploy.'
     : '',
   isDevelopment,
+  razorpayKeyId,
   ogImageUrl: normalizePublicUrl(import.meta.env.VITE_OG_IMAGE_URL, 'VITE_OG_IMAGE_URL'),
   publicLinks: Object.freeze({
     instagram: normalizePublicUrl(import.meta.env.VITE_INSTAGRAM_URL, 'VITE_INSTAGRAM_URL'),

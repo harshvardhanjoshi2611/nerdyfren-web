@@ -1,32 +1,35 @@
 export const serviceMeta = {
   'trend-hopper': {
     name: 'Trend Hopper',
-    short: 'Fast, culture-aware edits built to ride the moment.',
+    short: 'Quick-turnaround trend-based reel edit for creators who want to jump on what is working.',
     timeline: '24-48 hours',
     revisionCycles: 2,
-    requirements: ['Reference Audios', 'Reference Videos', 'Raw Footage Drive Link', 'Email ID', 'Brief'],
+    includes: ['Trend-style cut', 'Hook + pacing optimized', 'Captions / beat sync included', 'Fast delivery'],
+    requirements: ['Reference audio', 'Reference video', 'Raw footage link', 'Email ID', 'Brief'],
   },
   'video-reel': {
-    name: 'Reel Under 1 Minute',
-    short: 'High-retention vertical edits for Reels, Shorts and TikTok.',
-    timeline: '2–3 Working Days',
+    name: 'Video Editing',
+    short: 'Under 90 seconds, cut for the scroll. Fast, clean, effective.',
+    timeline: '2-3 Working Days',
     revisionCycles: 2,
-    requirements: ['Reference Audios', 'Reference Videos', 'Raw Footage Drive Link', 'Brief'],
+    includes: ['Under 90 seconds', 'Max 2 revisions', 'Links supported', 'Audio & edit references'],
+    requirements: ['Reference audio', 'Reference video', 'Raw footage link', 'Brief'],
   },
   'video-copy': {
-    name: 'Video with Text/Copy Under 1 Minute',
-    short: 'A complete content package: edit, hook, caption and polish.',
-    timeline: '3–4 Working Days',
-    revisionCycles: 3,
-    requirements: ['Reference Audios', 'Reference Videos', 'Raw Footage Drive Link', 'Email ID', 'Brief'],
+    name: 'Video + Copy / Text',
+    short: 'Up to 1 minute with punchy on-screen copy that keeps them watching.',
+    timeline: '3-4 Working Days',
+    revisionCycles: 2,
+    includes: ['Up to 1 minute', 'Copy & text overlay included', 'Max 2 revisions', 'Links supported'],
+    requirements: ['Reference audio', 'Reference video', 'Raw footage link', 'Email ID', 'Brief'],
   },
   podcast: {
     name: 'Podcast Editing',
-    short: 'A polished podcast package for episodes up to 45 minutes.',
+    short: 'Full episode edit plus one reel. The complete podcast drop, handled.',
     timeline: 'Custom delivery timeline',
     revisionCycles: 2,
-    requirements: ['Raw Footage Drive Link', 'Brief'],
-    includes: ['Up to 45-minute podcast', 'Podcast Edit', '1 Reel Adaptation/Precap', 'Basic Text Title'],
+    requirements: ['Raw footage link', 'Brief'],
+    includes: ['Up to 45-minute podcast', 'Full episode edit', '1 promotional reel', 'Basic animation'],
   },
   'surge-reel': {
     name: 'Surge Reel',
@@ -40,18 +43,28 @@ export const serviceMeta = {
 };
 
 export const fallbackServices = [
-  { id: 'trend-hopper', amount: 1999 },
-  { id: 'video-reel', amount: 2999 },
-  { id: 'video-copy', amount: 3999 },
-  { id: 'podcast', amount: 6000 },
+  { id: 'trend-hopper', amount: 3500, bookable: true },
+  { id: 'video-reel', amount: 2500, bookable: true },
+  { id: 'video-copy', amount: 3000, bookable: true },
+  { id: 'podcast', amount: 5000, bookable: true },
   { id: 'surge-reel', amount: null, bookable: false, coming_soon: true, surge_pricing: true },
 ];
 
 export const formatMoney = (amount = 0) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(amount);
 
 export const formatDate = (date) =>
-  date ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date)) : '-';
+  date
+    ? new Intl.DateTimeFormat('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(date))
+    : '-';
 
 export const formatDateTime = (date) =>
   date

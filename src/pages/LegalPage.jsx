@@ -58,50 +58,50 @@ export default function LegalPage({ type }) {
   const supportEmail = content.settings?.support_email || publicContactConfig.supportEmail;
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="nf-public min-h-screen">
       <Navbar />
-      <main className="aurora pb-24 pt-32">
-        <div className="container-shell max-w-4xl">
-          <div className="text-center">
-            <span className="eyebrow"><FileText size={13} /> {page.eyebrow}</span>
-            <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl">{page.title}</h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-400">{page.intro}</p>
+      <main className="nf-legal">
+        <div className="nf-container nf-legal-container">
+          <div className="nf-legal-heading">
+            <span className="nf-eyebrow"><FileText size={13} /> {page.eyebrow}</span>
+            <h1>{page.title}</h1>
+            <p>{page.intro}</p>
           </div>
 
           {type !== 'cancellation' && (
-            <div className="mt-12 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5 text-sm leading-6 text-amber-100">
+            <div className="nf-legal-notice">
               <strong>MVP legal placeholder:</strong> This page is operational guidance, not final legal advice.
               It requires final client and qualified legal approval before public launch.
             </div>
           )}
 
-          <div className="mt-6 space-y-4">
+          <div className="nf-legal-sections">
             {page.sections.map(([title, body]) => (
-              <section key={title} className="panel p-6 sm:p-8">
-                <h2 className="flex items-center gap-3 text-lg font-semibold">
-                  <ShieldCheck size={18} className="text-violet-300" />
+              <section key={title} className="nf-legal-card">
+                <h2>
+                  <ShieldCheck size={18} />
                   {title}
                 </h2>
-                <p className="mt-4 text-sm leading-7 text-slate-400">{body}</p>
+                <p>{body}</p>
               </section>
             ))}
           </div>
 
-          {page.footer && <p className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-sm leading-7 text-slate-400 sm:p-8">{page.footer}</p>}
+          {page.footer && <p className="nf-legal-footer-note">{page.footer}</p>}
 
-          <section className="panel mt-6 p-6 sm:p-8">
-            <h2 className="text-lg font-semibold">Questions or support</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
+          <section className="nf-legal-support">
+            <h2>Questions or support</h2>
+            <p>
               Contact NerdyFren through an official support channel and include your Request ID when applicable.
             </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <div>
               {whatsappHref && (
-                <a href={whatsappHref} target="_blank" rel="noreferrer" className="btn-primary">
+                <a href={whatsappHref} target="_blank" rel="noreferrer" className="nf-button-primary">
                   <MessageCircle size={16} /> Contact support
                 </a>
               )}
               {supportEmail && (
-                <a href={`mailto:${supportEmail}`} className="btn-secondary">
+                <a href={`mailto:${supportEmail}`} className="nf-legal-email">
                   {supportEmail}
                 </a>
               )}

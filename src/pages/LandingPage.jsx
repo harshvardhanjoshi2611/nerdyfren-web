@@ -1,15 +1,15 @@
 import {
   ArrowRight,
   Captions,
-  Check,
-  Clapperboard,
+  CheckCircle2,
+  FileDown,
   Film,
   MessageCircle,
-  MousePointerClick,
-  Play,
-  Send,
+  Music2,
+  Scissors,
+  Smartphone,
   Sparkles,
-  Upload,
+  TrendingUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
@@ -21,10 +21,11 @@ const services = [
   {
     id: 'trend-hopper',
     name: 'Trend Hopper',
-    tag: 'Fast-turn trend edit',
+    tag: 'Trend Hopper',
     description: 'Quick-turnaround trend-based reel edit for creators who want to jump on what is currently working.',
     bullets: ['Trend-style cut', 'Hook + pacing optimized', 'Captions / beat sync included', 'Fast delivery'],
     price: 'Starting ₹3,500',
+    icon: TrendingUp,
   },
   {
     id: 'video-reel',
@@ -33,6 +34,7 @@ const services = [
     description: 'Under 90 seconds, cut for the scroll. Fast, clean, effective.',
     bullets: ['Under 90 seconds', 'Max 2 revisions', 'Upload files or share links', 'Audio & edit references'],
     price: '₹2,500',
+    icon: Smartphone,
   },
   {
     id: 'video-copy',
@@ -41,6 +43,7 @@ const services = [
     description: 'Up to 1 minute with punchy on-screen copy that keeps them watching.',
     bullets: ['Up to 1 minute', 'Copy & text overlay included', 'Max 2 revisions', 'Upload files or share links'],
     price: '₹3,000',
+    icon: Captions,
     popular: true,
   },
   {
@@ -50,22 +53,23 @@ const services = [
     description: 'Full episode edit + 1 reel. The complete podcast drop, handled.',
     bullets: ['Up to 45 min episode edit', '1 promotional reel', 'Precap included', 'Basic animation'],
     price: '₹5,000',
+    icon: Music2,
   },
 ];
 
 const pipeline = [
-  { label: 'RAW', detail: 'camera roll', icon: Film },
-  { label: 'RAW', detail: 'rough clip', icon: Clapperboard },
-  { label: '▶ wait for it…', detail: 'hook added', icon: Play },
-  { label: '▶ on the beat', detail: 'cut + captions', icon: Captions },
-  { label: '▶ ready to post', detail: 'final export', icon: Sparkles },
+  { label: 'RAW', detail: 'Source files imported', icon: FileDown },
+  { label: 'RAW', detail: 'Selects pulled & trimmed', icon: Scissors },
+  { label: '▶ wait for it…', detail: 'Colour, pacing & cuts in motion', icon: Film, state: 'active' },
+  { label: '▶ on the beat', detail: 'Synced to music, captions locked', icon: Music2, state: 'active' },
+  { label: '▶ ready to post', detail: 'Delivered to your inbox', icon: CheckCircle2, state: 'done' },
 ];
 
 const processSteps = [
-  { title: 'Choose package', icon: MousePointerClick },
-  { title: 'Upload raw footage or links', icon: Upload },
-  { title: 'NerdyFren editor cuts it', icon: Clapperboard },
-  { title: 'Final content delivered', icon: Send },
+  ['Choose package', 'Pick the edit type that fits your project — trend reel, short, video + copy, or a full podcast drop.'],
+  ['Upload raw footage or links', 'Drop your raw files or share a Drive / WeTransfer link. Any format works.'],
+  ['NerdyFren editor cuts it', 'A real human editor takes your footage and turns it into something people actually watch.'],
+  ['Final content delivered', 'Get the finished file in 48 hours, ready to upload. Up to 2 revision rounds included.'],
 ];
 
 function getCmsSocialUrl(content, platform) {
@@ -82,116 +86,109 @@ export default function LandingPage() {
     || buildWhatsAppLink('Hi NerdyFren, I am not sure which editing package is right for me.');
 
   return (
-    <div className="noise min-h-screen overflow-x-hidden bg-canvas">
+    <div className="nf-public nf-home min-h-screen">
       <Navbar />
-      <main>
-        <section className="aurora relative flex min-h-[680px] items-center overflow-hidden pb-20 pt-32 sm:min-h-[760px] lg:pt-36">
-          <div className="absolute inset-0 bg-grid bg-[size:52px_52px] opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_92%)]" />
-          <div className="pointer-events-none absolute -right-32 top-32 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="container-shell relative">
-            <div className="max-w-5xl">
-              <span className="eyebrow"><Sparkles size={13} /> Post production studio</span>
-              <h1 className="mt-7 text-[clamp(4rem,12vw,9.5rem)] font-extrabold leading-[0.82] tracking-[-0.075em] text-white">
-                You shoot.<br /><span className="text-gradient">We edit.</span>
-              </h1>
-              <p className="mt-8 max-w-2xl text-base leading-7 text-slate-300 sm:text-xl sm:leading-8">
-                Reels, text overlays &amp; podcast editing — send the raw footage, we&apos;ll send back content that lands.
-              </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link to="/booking" className="btn-primary !px-7 !py-3.5">Book Editor <ArrowRight size={18} /></Link>
-                {whatsappHref && (
-                  <a href={whatsappHref} target="_blank" rel="noreferrer" className="btn-secondary !px-7 !py-3.5">
-                    <MessageCircle size={18} /> Not sure yet? Chat on WhatsApp
-                  </a>
-                )}
-              </div>
+      <main id="top">
+        <section className="nf-hero">
+          <div className="nf-hero-grain" />
+          <div className="nf-container nf-hero-inner">
+            <p className="nf-hero-eyebrow">Post production studio</p>
+            <h1 className="nf-hero-title">You shoot.<br /><span>We edit.</span></h1>
+            <p className="nf-hero-sub">Reels, text overlays &amp; podcast editing — send the raw footage, we&apos;ll send back content that lands.</p>
+            <div className="nf-hero-cta">
+              <Link to="/booking" className="nf-button-primary">Book Editor <ArrowRight size={17} /></Link>
+              {whatsappHref && (
+                <a href={whatsappHref} target="_blank" rel="noreferrer" className="nf-hero-whatsapp">
+                  <span><MessageCircle size={12} /></span> Not sure yet? Chat on WhatsApp
+                </a>
+              )}
             </div>
           </div>
         </section>
 
-        <section aria-label="NerdyFren highlights" className="border-y border-white/[0.08] bg-white/[0.025]">
-          <div className="container-shell grid divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="nf-stats-wrap">
+          <div className="nf-stats-card">
             {[
-              ['100%', 'human editors'],
-              ['4', 'focused packages'],
-              ['2', 'revisions on core edits'],
+              ['48h', 'Turnaround'],
+              ['2×', 'Revision rounds'],
+              ['100%', 'Human editors'],
+              ['Ready', 'To post, every cut'],
             ].map(([number, label]) => (
-              <div key={label} className="px-4 py-7 text-center">
-                <p className="text-3xl font-extrabold tracking-tight text-white">{number}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+              <div className="nf-stat" key={label}>
+                <p className="nf-stat-number">{number}</p>
+                <p className="nf-stat-label">{label}</p>
               </div>
+            ))}
+          </div>
+        </div>
+
+        <section id="services" className="nf-services">
+          <div className="nf-container nf-section-heading">
+            <p className="nf-eyebrow">Post production</p>
+            <h2>What we do</h2>
+            <p>Pick your package, send the footage, get back the final cut.</p>
+          </div>
+          <div className="nf-container nf-service-grid">
+            {services.map(({ id, name, tag, description, bullets, price, icon: Icon, popular }) => (
+              <article key={id} className={`nf-service-card ${popular ? 'is-featured' : ''}`}>
+                {popular && <span className="nf-service-badge">Most Popular</span>}
+                <div className="nf-service-icon"><Icon size={27} strokeWidth={1.8} /></div>
+                <p className="nf-service-tag">{tag}</p>
+                <h3>{name}</h3>
+                <p className="nf-service-description">{description}</p>
+                <ul>
+                  {bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+                </ul>
+                <div className="nf-service-foot">
+                  <p className="nf-service-price">{price}<span>one-time · INR</span></p>
+                  <Link to={`/booking?service=${id}`} className="nf-button-small">Book Now</Link>
+                </div>
+              </article>
             ))}
           </div>
         </section>
 
-        <section id="services" className="scroll-mt-20 py-24">
-          <div className="container-shell">
-            <div className="max-w-3xl">
-              <span className="eyebrow">Services</span>
-              <h2 className="mt-5 text-4xl font-extrabold tracking-[-0.045em] sm:text-6xl">Pick the edit. Send the footage.</h2>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">Focused packages for the content creators need to ship most.</p>
-            </div>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {services.map((service, index) => (
-                <article key={service.id} className={`panel relative flex min-w-0 flex-col overflow-hidden p-6 transition hover:-translate-y-1 hover:border-violet-400/30 ${service.popular ? 'border-violet-400/40 shadow-glow' : ''}`}>
-                  {service.popular && <span className="absolute right-4 top-4 rounded-full bg-violet-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Most Popular</span>}
-                  <span className="font-mono text-xs text-violet-300">0{index + 1}</span>
-                  <p className="mt-7 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">{service.tag}</p>
-                  <h3 className="mt-2 text-2xl font-bold tracking-tight">{service.name}</h3>
-                  <p className="mt-4 min-h-[72px] text-sm leading-6 text-slate-400">{service.description}</p>
-                  <ul className="mt-6 space-y-3 border-t border-white/[0.08] pt-6">
-                    {service.bullets.map((bullet) => <li key={bullet} className="flex gap-2.5 text-sm text-slate-300"><Check size={15} className="mt-0.5 shrink-0 text-emerald-400" />{bullet}</li>)}
-                  </ul>
-                  <div className="mt-auto pt-8">
-                    <p className="text-2xl font-extrabold tracking-tight text-white">{service.price}</p>
-                    <p className="mt-1 text-xs text-slate-600">one-time · INR</p>
-                    <Link to={`/booking?service=${service.id}`} className="btn-primary mt-5 w-full">Book Now <ArrowRight size={16} /></Link>
-                  </div>
-                </article>
-              ))}
-            </div>
+        <section className="nf-pipeline">
+          <div className="nf-container nf-section-heading">
+            <p className="nf-eyebrow">From raw to ready</p>
+            <h2>Raw footage in. Ready-to-post out.</h2>
+            <p>A quick visual flow of how your rough clips become scroll-stopping edits.</p>
           </div>
-        </section>
-
-        <section className="border-y border-white/[0.07] bg-white/[0.018] py-24">
-          <div className="container-shell">
-            <div className="mx-auto max-w-3xl text-center">
-              <span className="eyebrow">From raw to ready</span>
-              <h2 className="mt-5 text-4xl font-extrabold tracking-[-0.045em] sm:text-6xl">Raw footage in. Ready-to-post out.</h2>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400">A quick visual flow of how your rough clips become scroll-stopping edits.</p>
-            </div>
-            <div className="relative mt-12 grid grid-cols-2 gap-4 lg:grid-cols-5">
-              <div className="absolute left-[8%] right-[8%] top-1/2 hidden h-px bg-gradient-to-r from-violet-500/20 via-cyan-400/50 to-emerald-400/20 lg:block" />
-              {pipeline.map(({ label, detail, icon: Icon }, index) => (
-                <div key={`${label}-${index}`} className={`panel relative min-w-0 p-5 ${index === pipeline.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}>
-                  <div className="grid aspect-[4/3] place-items-center rounded-xl border border-white/[0.07] bg-black/20">
-                    <Icon size={28} className={index > 1 ? 'text-cyan-300' : 'text-violet-300'} />
-                  </div>
-                  <p className="mt-4 break-words text-sm font-bold text-white">{label}</p>
-                  <p className="mt-1 text-xs text-slate-600">{detail}</p>
+          <div className="nf-container">
+            <div className="nf-pipeline-row">
+              {pipeline.map(({ label, detail, icon: Icon, state }) => (
+                <div key={`${label}-${detail}`} className={`nf-pipeline-card ${state ? `is-${state}` : ''}`}>
+                  <div className="nf-pipeline-icon"><Icon size={32} strokeWidth={1.7} /></div>
+                  <p className="nf-pipeline-label">{label}</p>
+                  <p className="nf-pipeline-detail">{detail}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="process" className="scroll-mt-20 py-24">
-          <div className="container-shell">
-            <div className="mx-auto max-w-3xl text-center">
-              <span className="eyebrow">The process</span>
-              <h2 className="mt-5 text-4xl font-extrabold tracking-[-0.045em] sm:text-6xl">Four cuts. No back-and-forth.</h2>
-            </div>
-            <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {processSteps.map(({ title, icon: Icon }, index) => (
-                <article key={title} className="panel p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-violet-300">0{index + 1}</span>
-                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-violet-500/10 text-cyan-300"><Icon size={19} /></span>
-                  </div>
-                  <h3 className="mt-10 text-lg font-bold">{title}</h3>
-                </article>
-              ))}
-            </div>
+        <section id="process" className="nf-process">
+          <div className="nf-container nf-section-heading">
+            <p className="nf-eyebrow">The process</p>
+            <h2>Four cuts. No back-and-forth.</h2>
+          </div>
+          <div className="nf-container nf-process-track">
+            <div className="nf-process-line" />
+            {processSteps.map(([title, description], index) => (
+              <article className="nf-process-step" key={title}>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="nf-human-note">
+          <div className="nf-container">
+            <Sparkles size={18} /> Your Nerdy Fren turns raw footage into ready-to-post content. <strong>100% human editors.</strong>
           </div>
         </section>
       </main>

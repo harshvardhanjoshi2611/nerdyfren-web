@@ -62,7 +62,7 @@ export default function FloatingWhatsApp() {
       <button
         type="button"
         disabled
-        className="fixed bottom-5 right-5 z-[90] inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-white/10 bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-500 opacity-80 shadow-2xl sm:bottom-7 sm:right-7"
+        className="nf-whatsapp-float is-disabled"
         aria-label="Coordinator chat is temporarily unavailable"
         title="WhatsApp support is temporarily unavailable"
       >
@@ -77,11 +77,11 @@ export default function FloatingWhatsApp() {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="fixed bottom-5 right-5 z-[90] inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-2xl shadow-emerald-950/40 transition hover:-translate-y-1 hover:bg-emerald-400 sm:bottom-7 sm:right-7"
+      className="nf-whatsapp-float"
       aria-label="Chat with NerdyFren on WhatsApp"
     >
       <MessageCircle size={19} />
-      <span className="hidden sm:inline">Chat on WhatsApp</span>
+      <span>Chat on WhatsApp</span>
     </a>
   );
 }

@@ -10,6 +10,10 @@ function paymentRows(bookings) {
     booking_reference: booking.booking_ref,
     client: booking.client_name,
     payment_reference: booking.payment_reference || '',
+    razorpay_order_id: booking.razorpay_order_id || '',
+    razorpay_payment_id: booking.razorpay_payment_id || '',
+    payment_method: booking.payment_method || '',
+    verification_status: booking.payment_verified_at ? 'verified' : 'not_verified',
     amount: booking.payment_amount ?? booking.amount,
     status: booking.payment_status,
     payment_date: booking.payment_date || '',
@@ -81,14 +85,17 @@ export default function PaymentsPanel({ pending, bookings, busy, action }) {
           <p className="mt-1 text-sm text-slate-500">Current payment state for every booking.</p>
         </div>
         <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1250px] text-left text-sm">
             <thead className="border-b border-white/[0.07] bg-white/[0.02] text-[10px] uppercase tracking-wider text-slate-600">
               <tr>
                 <th className="px-5 py-4">Booking</th>
                 <th className="px-5 py-4">Client</th>
                 <th className="px-5 py-4">Reference</th>
+                <th className="px-5 py-4">Razorpay order</th>
+                <th className="px-5 py-4">Razorpay payment</th>
                 <th className="px-5 py-4">Amount</th>
                 <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Verification</th>
                 <th className="px-5 py-4">Payment date</th>
               </tr>
             </thead>
@@ -98,12 +105,15 @@ export default function PaymentsPanel({ pending, bookings, busy, action }) {
                   <td className="px-5 py-4 font-mono text-xs text-slate-400">{booking.booking_ref}</td>
                   <td className="px-5 py-4"><p className="text-slate-200">{booking.client_name}</p><p className="mt-1 text-xs text-slate-600">{booking.client_email}</p></td>
                   <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-cyan-300">{booking.payment_reference || '-'}</td>
+                  <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-slate-400">{booking.razorpay_order_id || '-'}</td>
+                  <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-cyan-300">{booking.razorpay_payment_id || '-'}</td>
                   <td className="px-5 py-4">{formatMoney(booking.payment_amount ?? booking.amount)}</td>
                   <td className="px-5 py-4"><StatusBadge status={booking.payment_status} /></td>
+                  <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_verified_at ? `Verified${booking.payment_method ? ` via ${booking.payment_method}` : ''}` : 'Not verified'}</td>
                   <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_date ? formatDateTime(booking.payment_date) : humanize(booking.payment_status)}</td>
                 </tr>
               ))}
-              {!bookings.length && <tr><td colSpan="6" className="px-5 py-14 text-center text-slate-600">No payment records yet.</td></tr>}
+              {!bookings.length && <tr><td colSpan="9" className="px-5 py-14 text-center text-slate-600">No payment records yet.</td></tr>}
             </tbody>
           </table>
         </div>

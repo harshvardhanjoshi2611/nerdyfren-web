@@ -198,6 +198,12 @@ function ProjectsTable({ items, editors, busy, action }) {
                       </div>
                     </details>
                   )}
+                  {booking.brief && (
+                    <details className="mt-3 max-w-72">
+                      <summary className="cursor-pointer text-xs text-slate-500">View full brief</summary>
+                      <p className="mt-2 whitespace-pre-wrap rounded-lg bg-white/[0.03] p-3 text-xs leading-5 text-slate-400">{booking.brief}</p>
+                    </details>
+                  )}
                 </td>
                 <td className="px-4 py-5">
                   <p className="text-slate-200">{booking.client_name}</p>
@@ -215,6 +221,13 @@ function ProjectsTable({ items, editors, busy, action }) {
                 </td>
                 <td className="px-4 py-5">
                   <StatusBadge status={booking.payment_status} />
+                  {(booking.razorpay_order_id || booking.razorpay_payment_id) && (
+                    <div className="mt-3 max-w-56 space-y-1 break-all font-mono text-[10px] text-slate-500">
+                      <p>Order: {booking.razorpay_order_id || '-'}</p>
+                      <p>Payment: {booking.razorpay_payment_id || '-'}</p>
+                      <p>{booking.payment_verified_at ? 'Signature verified' : 'Verification pending'}</p>
+                    </div>
+                  )}
                   {booking.payment_status !== 'paid' && (
                     <button disabled={!!busy} onClick={() => action(`pay-${booking.id}`, () => adminApi.updatePayment(booking.id, { payment_status: 'paid', payment_id: `manual-${Date.now()}` }), 'Payment marked as received.')} className="btn-secondary mt-3 !px-3 !py-2 text-xs">
                       {busy === `pay-${booking.id}` ? <LoaderCircle className="animate-spin" size={13} /> : <Check size={13} />} Mark paid

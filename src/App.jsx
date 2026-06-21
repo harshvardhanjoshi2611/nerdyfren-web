@@ -24,9 +24,6 @@ export default function App() {
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/services" element={<ServicesPage />} />
-      <Route path="/book" element={<BookingPage />} />
-      <Route path="/booking" element={<BookingPage />} />
-      <Route path="/booking/success" element={<BookingSuccessPage />} />
       <Route path="/track" element={<TrackingPage />} />
       <Route path="/privacy" element={<LegalPage type="privacy" />} />
       <Route path="/terms" element={<LegalPage type="terms" />} />
@@ -37,6 +34,9 @@ export default function App() {
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
       <Route path="/reset-password" element={<PasswordRecoveryPage mode="reset" />} />
       <Route element={<ProtectedRoute role="client" />}>
+        <Route path="/book" element={<BookingPage />} />
+        <Route path="/booking" element={<BookingPage />} />
+        <Route path="/booking/success" element={<BookingSuccessPage />} />
         <Route path="/dashboard/client" element={<UserDashboard />} />
       </Route>
       <Route path="/dashboard" element={<Navigate to="/dashboard/client" replace />} />

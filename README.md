@@ -43,6 +43,7 @@ Set the local public configuration in `.env`:
 ```env
 VITE_API_URL=http://localhost:3001
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+VITE_RAZORPAY_KEY_ID=rzp_test_or_live_key_id
 VITE_SITE_URL=http://localhost:5173
 VITE_OG_IMAGE_URL=
 VITE_SUPPORT_EMAIL=support@your-domain.example
@@ -83,6 +84,7 @@ npm run preview
 ```env
 VITE_API_URL=https://your-api.up.railway.app
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+VITE_RAZORPAY_KEY_ID=your_public_razorpay_key_id
 VITE_SITE_URL=https://your-domain.example
 VITE_SUPPORT_EMAIL=support@your-domain.example
 ```
@@ -110,6 +112,7 @@ purchased domain differs.
 npm install -g vercel
 vercel
 vercel env add VITE_API_URL production
+vercel env add VITE_RAZORPAY_KEY_ID production
 vercel --prod
 ```
 
@@ -130,6 +133,8 @@ server-managed sessions are introduced.
 The frontend never sends service prices or payment claims during booking creation. Prices are loaded from the backend, and payments are confirmed only from the protected admin dashboard.
 
 `VITE_API_URL` is the backend origin. The centralized client appends `/api/v1` to every endpoint. For backward compatibility, a value that already ends in `/api/v1` is normalized and also works.
+
+`VITE_RAZORPAY_KEY_ID` is a public checkout key. Never add `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` to the frontend or Vercel environment.
 
 ## Folder Structure
 

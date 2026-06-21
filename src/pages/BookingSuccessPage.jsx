@@ -1,263 +1,81 @@
-import {
-  ArrowRight,
-  BadgeIndianRupee,
-  Building2,
-  Check,
-  Clock3,
-  LoaderCircle,
-  MessageCircle,
-  ReceiptIndianRupee,
-  Smartphone,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ArrowRight, CheckCircle2, MessageCircle, ReceiptIndianRupee } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import CopyButton from '../components/CopyButton';
 import Logo from '../components/Logo';
-import Modal from '../components/Modal';
 import useAuth from '../hooks/useAuth';
-import { getApiError, paymentsApi } from '../lib/api';
-import { formatMoney, serviceMeta } from '../lib/format';
-import { paymentConfig } from '../lib/paymentConfig';
+import useSiteContent from '../hooks/useSiteContent';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
+import { formatMoney, serviceMeta } from '../lib/format';
+
+function recentBooking() {
+  try {
+    return JSON.parse(sessionStorage.getItem('nerdyfren_last_booking') || 'null');
+  } catch {
+    return null;
+  }
+}
 
 export default function BookingSuccessPage() {
   const location = useLocation();
   const { user } = useAuth();
-  const stored = JSON.parse(sessionStorage.getItem('nerdyfren_last_booking') || 'null');
-  const booking = location.state || stored;
+  const { content } = useSiteContent();
+  const booking = location.state || recentBooking();
   const requestId = booking?.request_id || booking?.booking_ref || '';
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [payment, setPayment] = useState({ payment_reference: '', screenshot_url: '' });
-  const [paymentBusy, setPaymentBusy] = useState(false);
-  const [paymentError, setPaymentError] = useState('');
-  const [paymentResult, setPaymentResult] = useState(null);
-
-  const whatsappMessage = useMemo(
-    () => buildCoordinatorMessage({
-      requestId,
-      customerName: booking?.customer_name || user?.name,
-      service: booking?.service_name || serviceMeta[booking?.service_type]?.name,
-      context: 'Booking confirmed; payment is next',
-    }),
-    [booking?.customer_name, booking?.service_name, booking?.service_type, requestId, user?.name],
-  );
-  const whatsappHref = buildWhatsAppLink(whatsappMessage);
-
-  const evidenceHref = useMemo(() => {
-    const text = [
-      buildCoordinatorMessage({
-        requestId,
-        customerName: booking?.customer_name || user?.name,
-        service: booking?.service_name || serviceMeta[booking?.service_type]?.name,
-        context: 'Payment notification submitted',
-      }),
-      payment.payment_reference ? `Payment reference: ${payment.payment_reference}` : '',
-      payment.screenshot_url ? `Screenshot: ${payment.screenshot_url}` : '',
-    ].filter(Boolean).join('\n');
-    return buildWhatsAppLink(text);
-  }, [
-    booking?.customer_name,
-    booking?.service_name,
-    booking?.service_type,
-    payment.payment_reference,
-    payment.screenshot_url,
+  const serviceName = booking?.service_name
+    || serviceMeta[booking?.service_type]?.name
+    || booking?.service_type;
+  const cmsWhatsApp = (content.social_links || []).find((item) => (
+    item.is_active !== false
+    && String(item.platform || item.label || '').toLowerCase().includes('whatsapp')
+  ))?.url;
+  const whatsappHref = cmsWhatsApp || buildWhatsAppLink(buildCoordinatorMessage({
     requestId,
-    user?.name,
-  ]);
+    customerName: booking?.customer_name || user?.name,
+    service: serviceName,
+    context: booking?.payment_status === 'paid' ? 'Razorpay payment confirmed' : 'Payment support',
+  }));
 
   if (!booking) {
     return (
-      <div className="grid min-h-screen place-items-center bg-canvas p-5">
-        <div className="panel max-w-md p-8 text-center">
-          <h1 className="text-xl font-semibold">No recent booking found</h1>
-          <p className="mt-2 text-sm text-slate-500">Start a project to receive your Request ID.</p>
-          <Link to="/booking" className="btn-primary mt-6">Start a project</Link>
+      <main className="nf-public nf-success-page">
+        <div className="nf-success-card">
+          <Logo tone="surface" />
+          <h1>No recent booking found.</h1>
+          <p>Open your client dashboard to view account-owned requests.</p>
+          <Link to="/dashboard/client" className="nf-button-primary">Open dashboard</Link>
         </div>
-      </div>
+      </main>
     );
   }
 
-  const submitPayment = async (event) => {
-    event.preventDefault();
-    setPaymentBusy(true);
-    setPaymentError('');
-    try {
-      const result = await paymentsApi.notify({
-        request_id: requestId,
-        ...(booking.tracking_token ? { tracking_token: booking.tracking_token } : {}),
-        payment_amount: Number(booking.amount),
-        payment_reference: payment.payment_reference.trim(),
-      });
-      if (payment.screenshot_url) {
-        sessionStorage.setItem(
-          `nerdyfren_payment_evidence_${requestId}`,
-          payment.screenshot_url,
-        );
-      }
-      setPaymentResult(result);
-    } catch (requestError) {
-      setPaymentError(getApiError(requestError, 'Could not submit the payment notification.'));
-    } finally {
-      setPaymentBusy(false);
-    }
-  };
-
+  const paid = booking.payment_status === 'paid';
   return (
-    <div className="aurora min-h-screen bg-canvas px-5 py-8">
-      <div className="mx-auto max-w-3xl">
-        <div className="flex justify-center"><Logo /></div>
-        <div className="panel mt-12 overflow-hidden p-7 sm:p-10">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 text-emerald-300"><Check size={25} /></div>
-          <div className="mt-6 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Brief received</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight">Your project is booked.</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-400">Complete payment, notify the team, and keep your Request ID nearby.</p>
-          </div>
+    <main className="nf-public nf-success-page">
+      <div className="nf-success-card">
+        <Logo tone="surface" />
+        <div className={`nf-success-icon ${paid ? '' : 'is-pending'}`}>
+          {paid ? <CheckCircle2 size={32} /> : <ReceiptIndianRupee size={30} />}
+        </div>
+        <p className="nf-eyebrow">{paid ? 'Payment successful' : 'Payment pending'}</p>
+        <h1>{paid ? 'Your editor request is confirmed.' : 'Your request is saved.'}</h1>
+        <p className="nf-success-intro">
+          {paid
+            ? 'The Razorpay signature was verified by NerdyFren. Your project is ready for assignment.'
+            : 'No payment has been confirmed yet. You can safely continue from your dashboard.'}
+        </p>
 
-          <div className="mx-auto mt-8 max-w-md">
-            <IdentifierCard
-              icon={ReceiptIndianRupee}
-              label="Request ID"
-              value={requestId}
-            />
-          </div>
+        <dl className="nf-success-summary">
+          <div><dt>Request ID</dt><dd>{requestId}</dd></div>
+          <div><dt>Service</dt><dd>{serviceName}</dd></div>
+          <div><dt>{paid ? 'Amount paid' : 'Amount due'}</dt><dd>{formatMoney(booking.amount)}</dd></div>
+          <div><dt>Payment</dt><dd>{paid ? 'Verified' : 'Pending'}</dd></div>
+        </dl>
 
-          <div className="mt-6 rounded-xl bg-white/[0.03] p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-600"><Clock3 size={14} /> Expected timeline</p>
-                <p className="mt-2 text-sm font-medium">{serviceMeta[booking.service_type]?.timeline || '2-5 business days'}</p>
-              </div>
-              <p className="text-2xl font-bold">{formatMoney(booking.amount)}</p>
-            </div>
-          </div>
-
-          <section className="mt-8">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-violet-300">Payment instructions</p>
-                <h2 className="mt-2 text-xl font-semibold">Choose your payment method</h2>
-              </div>
-              <BadgeIndianRupee className="text-violet-400" />
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <PaymentInstruction
-                icon={Smartphone}
-                label="UPI ID"
-                value={paymentConfig.upiId}
-                unavailable="UPI instructions are temporarily unavailable."
-              />
-              <PaymentInstruction
-                icon={Building2}
-                label="Bank transfer"
-                value={paymentConfig.bankTransfer}
-                unavailable="Bank transfer instructions are temporarily unavailable."
-              />
-              <PaymentInstruction
-                icon={MessageCircle}
-                label="WhatsApp"
-                value={paymentConfig.whatsappNumber ? `+${paymentConfig.whatsappNumber}` : ''}
-                unavailable="Coordinator chat is temporarily unavailable."
-                href={whatsappHref}
-              />
-            </div>
-          </section>
-
-          <button onClick={() => setPaymentOpen(true)} className="btn-primary mt-7 w-full">
-            <ReceiptIndianRupee size={17} /> I Have Paid
-          </button>
-          <Link to={`/track?id=${encodeURIComponent(requestId)}`} className="btn-secondary mt-3 w-full">Track Project <ArrowRight size={17} /></Link>
+        <div className="nf-success-actions">
+          <Link to={`/track?id=${encodeURIComponent(requestId)}`} className="nf-button-primary">Track Request <ArrowRight size={17} /></Link>
+          <Link to="/dashboard/client" className="nf-booking-secondary">Client dashboard</Link>
+          {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" className="nf-booking-secondary"><MessageCircle size={16} /> WhatsApp support</a>}
         </div>
       </div>
-
-      {paymentOpen && (
-        <Modal
-          title={paymentResult ? 'Payment notification sent' : 'Notify payment'}
-          eyebrow={requestId}
-          onClose={() => setPaymentOpen(false)}
-        >
-          {paymentResult ? (
-            <div>
-              <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4">
-                <p className="font-medium text-emerald-300">Your payment is awaiting admin verification.</p>
-                <p className="mt-2 text-sm text-slate-400">Reference {paymentResult.payment_reference}</p>
-              </div>
-              {payment.screenshot_url && evidenceHref && (
-                <a href={evidenceHref} target="_blank" rel="noreferrer" className="btn-secondary mt-4 w-full">
-                  <MessageCircle size={16} /> Share screenshot evidence on WhatsApp
-                </a>
-              )}
-              <button onClick={() => setPaymentOpen(false)} className="btn-primary mt-3 w-full">Done</button>
-            </div>
-          ) : (
-            <form onSubmit={submitPayment} className="space-y-4">
-              {!user && !booking.tracking_token && (
-                <p className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm leading-6 text-amber-200">
-                  This browser no longer has the private booking confirmation. Use the WhatsApp option above and share your Request ID.
-                </p>
-              )}
-              <label>
-                <span className="label">Payment Reference</span>
-                <input
-                  required
-                  minLength={6}
-                  maxLength={100}
-                  className="input"
-                  value={payment.payment_reference}
-                  onChange={(event) => setPayment({ ...payment, payment_reference: event.target.value })}
-                  placeholder="UPI / UTR / transaction reference"
-                />
-              </label>
-              <label>
-                <span className="label">Payment proof link <span className="text-slate-600">(optional)</span></span>
-                <input
-                  type="url"
-                  className="input"
-                  value={payment.screenshot_url}
-                  onChange={(event) => setPayment({ ...payment, screenshot_url: event.target.value })}
-                  placeholder="https://drive.google.com/..."
-                />
-                <span className="mt-2 block text-xs text-slate-600">Paste an authorized Drive or image link. It stays in this browser and can be shared with the coordinator after submission.</span>
-              </label>
-              {paymentError && <p className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{paymentError}</p>}
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <button type="button" onClick={() => setPaymentOpen(false)} className="btn-secondary">Cancel</button>
-                <button disabled={paymentBusy || !requestId || (!user && !booking.tracking_token)} className="btn-primary">
-                  {paymentBusy ? <LoaderCircle className="animate-spin" size={16} /> : <ReceiptIndianRupee size={16} />}
-                  Submit notification
-                </button>
-              </div>
-            </form>
-          )}
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function IdentifierCard({ icon: Icon, label, value }) {
-  return (
-    <div className="rounded-2xl border border-violet-400/15 bg-violet-500/[0.06] p-5">
-      <div className="flex items-center gap-2 text-xs font-medium text-violet-300"><Icon size={15} /> {label}</div>
-      <p className="mt-4 break-all rounded-xl bg-black/25 p-4 font-mono text-sm text-slate-200">{value}</p>
-      <CopyButton value={value} className="mt-3" />
-    </div>
-  );
-}
-
-function PaymentInstruction({ icon: Icon, label, value, unavailable, href }) {
-  const available = Boolean(value);
-  return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-      <Icon size={18} className="text-violet-400" />
-      <p className="mt-4 text-xs uppercase tracking-[.12em] text-slate-600">{label}</p>
-      <p className={`mt-2 min-h-10 break-words text-sm ${available ? 'text-slate-300' : 'text-amber-300'}`}>
-        {available ? value : unavailable}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <CopyButton value={available ? value : ''} />
-        {href && <a href={href} target="_blank" rel="noreferrer" className="btn-secondary !px-3 !py-2 text-xs">Open</a>}
-      </div>
-    </div>
+    </main>
   );
 }
