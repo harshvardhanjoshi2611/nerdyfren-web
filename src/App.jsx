@@ -30,7 +30,8 @@ export default function App() {
       <Route path="/track" element={<TrackingPage />} />
       <Route path="/privacy" element={<LegalPage type="privacy" />} />
       <Route path="/terms" element={<LegalPage type="terms" />} />
-      <Route path="/refund" element={<LegalPage type="refund" />} />
+      <Route path="/cancellation-policy" element={<LegalPage type="cancellation" />} />
+      <Route path="/refund" element={<Navigate to="/cancellation-policy" replace />} />
       <Route path="/signin" element={<UserAuthPage mode="signin" />} />
       <Route path="/signup" element={<UserAuthPage mode="signup" />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />

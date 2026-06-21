@@ -1,14 +1,14 @@
 export const fallbackSiteContent = {
   settings: {
-    brand_name: 'NerdyFren',
+    brand_name: 'NerdyFren.com',
     support_email: 'support@nerdyfren.com',
   },
   homepage: {
     hero: {
-      eyebrow: 'The creative operating system for creators',
-      title: 'Make content that earns attention.',
-      subtitle: 'Get matched with vetted editors who understand internet culture, your voice, and the pace you need to publish.',
-      cta_text: 'Start your project',
+      eyebrow: 'Post production studio',
+      title: 'You shoot. We edit.',
+      subtitle: "Reels, text overlays & podcast editing — send the raw footage, we'll send back content that lands.",
+      cta_text: 'Book Editor →',
       cta_url: '/booking',
     },
     human_editors: {

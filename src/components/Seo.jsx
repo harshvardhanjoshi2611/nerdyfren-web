@@ -6,8 +6,8 @@ const brandDescription = 'NerdyFren connects creators with verified video editor
 
 const publicRoutes = {
   '/': {
-    title: 'NerdyFren | Verified Editors for Creator Content',
-    description: brandDescription,
+    title: 'NerdyFren.com — You shoot. We edit.',
+    description: 'Reels, text overlays and podcast editing — send the raw footage, we will send back content that lands.',
   },
   '/services': {
     title: 'Creator Editing Services | NerdyFren',
@@ -37,9 +37,9 @@ const publicRoutes = {
     title: 'Terms of Service | NerdyFren',
     description: 'Read the NerdyFren MVP service terms for bookings, payments, delivery, and revisions.',
   },
-  '/refund': {
-    title: 'Refund and Dispute Policy | NerdyFren',
-    description: 'Read how NerdyFren reviews refund and service-dispute requests for managed creative projects.',
+  '/cancellation-policy': {
+    title: 'Cancellation Policy | NerdyFren.com',
+    description: 'Read the NerdyFren.com cancellation policy for editing projects, work already started, revisions, and applicable refunds.',
   },
 };
 

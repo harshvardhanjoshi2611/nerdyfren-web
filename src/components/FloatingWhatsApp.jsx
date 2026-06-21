@@ -1,6 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import useSiteContent from '../hooks/useSiteContent';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
 import { serviceMeta } from '../lib/format';
 
@@ -11,12 +12,14 @@ const visiblePaths = new Set([
   '/booking',
   '/booking/success',
   '/dashboard',
+  '/dashboard/client',
   '/track',
 ]);
 
 export default function FloatingWhatsApp() {
   const { pathname, search } = useLocation();
   const { user } = useAuth();
+  const { content } = useSiteContent();
   if (!visiblePaths.has(pathname)) return null;
 
   const params = new URLSearchParams(search);
@@ -38,9 +41,14 @@ export default function FloatingWhatsApp() {
     '/booking': 'Booking form',
     '/booking/success': 'Booking confirmed',
     '/dashboard': 'Creator dashboard',
+    '/dashboard/client': 'Creator dashboard',
     '/track': 'Project tracking',
   };
-  const href = buildWhatsAppLink(buildCoordinatorMessage({
+  const cmsWhatsAppUrl = (content.social_links || []).find((item) => (
+    item.is_active !== false
+    && String(item.platform || item.label || '').toLowerCase().includes('whatsapp')
+  ))?.url;
+  const href = cmsWhatsAppUrl || buildWhatsAppLink(buildCoordinatorMessage({
     requestId,
     customerName: user?.name || (useRecentBooking ? recentBooking?.customer_name : ''),
     service: useRecentBooking
@@ -70,10 +78,10 @@ export default function FloatingWhatsApp() {
       target="_blank"
       rel="noreferrer"
       className="fixed bottom-5 right-5 z-[90] inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-2xl shadow-emerald-950/40 transition hover:-translate-y-1 hover:bg-emerald-400 sm:bottom-7 sm:right-7"
-      aria-label="Talk to Coordinator on WhatsApp"
+      aria-label="Chat with NerdyFren on WhatsApp"
     >
       <MessageCircle size={19} />
-      <span className="hidden sm:inline">Talk to Coordinator</span>
+      <span className="hidden sm:inline">Chat on WhatsApp</span>
     </a>
   );
 }

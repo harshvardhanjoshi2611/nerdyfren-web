@@ -1,6 +1,7 @@
 import { FileText, MessageCircle, ShieldCheck } from 'lucide-react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
+import useSiteContent from '../hooks/useSiteContent';
 import { buildWhatsAppLink, publicContactConfig } from '../lib/contactConfig';
 
 const pages = {
@@ -29,24 +30,32 @@ const pages = {
       ['Service limits', 'Timelines may change when briefs, access, approvals, or source materials are incomplete. Final legal terms, liability limits, and jurisdiction require client and qualified legal approval.'],
     ],
   },
-  refund: {
-    eyebrow: 'Refund and dispute policy',
-    title: 'A practical review process for service concerns.',
-    intro: 'Refund and dispute requests are reviewed case-by-case by NerdyFren operations.',
+  cancellation: {
+    eyebrow: 'Cancellation Policy',
+    title: 'Cancellation Policy',
+    intro: 'At NerdyFren.com, we start work quickly once your footage and brief are received. This policy explains when a request can be cancelled and what happens after editing work has started.',
     sections: [
-      ['Before work begins', 'Contact support as soon as possible if a project must be cancelled. Eligibility depends on payment status, assignment, work already completed, and costs already incurred.'],
-      ['After work starts', 'A full refund is not automatic once an editor has been assigned or production has started. NerdyFren may offer a revision, partial adjustment, reassignment, credit, or another resolution after review.'],
-      ['After delivery or approval', 'Refunds are generally not available after work has been delivered or approved unless an exception is approved by an authorized admin.'],
-      ['Revision process', 'Available revision cycles should be used for reasonable changes within the agreed brief. New scope, new source material, or a materially different creative direction may require an additional quote.'],
-      ['How to request a review', 'Provide the Request ID, payment reference, a concise explanation, and relevant evidence through official support. Do not post private project or payment links publicly.'],
+      ['1. Before work starts', 'You can request cancellation before an editor has started working on your project. If payment has already been made and no work has started, the eligible amount may be refunded after deducting any payment gateway or processing charges, if applicable.'],
+      ['2. After work has started', 'Once an editor has started reviewing, cutting, syncing, captioning, or preparing your footage, the order cannot be fully cancelled because production time has already been reserved and used.'],
+      ['3. After first delivery', 'Once the first edited version has been delivered, the order is not eligible for cancellation. You can still request revisions as per the revision limit included in your selected package.'],
+      ['4. Missing footage or delayed inputs', 'If required footage, links, references, or instructions are missing, the project timeline may be paused until the required inputs are received. Delays caused by missing client inputs will not be treated as cancellation from NerdyFren.com’s side.'],
+      ['5. How to request cancellation', 'To request cancellation, contact NerdyFren.com through the official WhatsApp/contact option and share your request ID, registered name, and reason for cancellation.'],
+      ['6. Refund timeline, if applicable', 'Approved refunds, if any, will be processed to the original payment method within 5–7 working days, subject to payment gateway and banking timelines.'],
     ],
+    footer: 'NerdyFren.com reserves the right to review cancellation requests on a case-by-case basis depending on project status, work completed, and communication history.',
   },
 };
 
 export default function LegalPage({ type }) {
   const page = pages[type] || pages.privacy;
-  const whatsappHref = buildWhatsAppLink(`Hi NerdyFren, I need help with the ${page.eyebrow}.`);
-  const supportEmail = publicContactConfig.supportEmail;
+  const { content } = useSiteContent();
+  const cmsWhatsAppUrl = (content.social_links || []).find((item) => (
+    item.is_active !== false
+    && String(item.platform || item.label || '').toLowerCase().includes('whatsapp')
+  ))?.url;
+  const whatsappHref = cmsWhatsAppUrl
+    || buildWhatsAppLink(`Hi NerdyFren, I need help with the ${page.eyebrow}.`);
+  const supportEmail = content.settings?.support_email || publicContactConfig.supportEmail;
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -59,10 +68,12 @@ export default function LegalPage({ type }) {
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-400">{page.intro}</p>
           </div>
 
-          <div className="mt-12 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5 text-sm leading-6 text-amber-100">
-            <strong>MVP legal placeholder:</strong> This page is operational guidance, not final legal advice.
-            It requires final client and qualified legal approval before public launch.
-          </div>
+          {type !== 'cancellation' && (
+            <div className="mt-12 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5 text-sm leading-6 text-amber-100">
+              <strong>MVP legal placeholder:</strong> This page is operational guidance, not final legal advice.
+              It requires final client and qualified legal approval before public launch.
+            </div>
+          )}
 
           <div className="mt-6 space-y-4">
             {page.sections.map(([title, body]) => (
@@ -75,6 +86,8 @@ export default function LegalPage({ type }) {
               </section>
             ))}
           </div>
+
+          {page.footer && <p className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-sm leading-7 text-slate-400 sm:p-8">{page.footer}</p>}
 
           <section className="panel mt-6 p-6 sm:p-8">
             <h2 className="text-lg font-semibold">Questions or support</h2>
