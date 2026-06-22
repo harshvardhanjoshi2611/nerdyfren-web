@@ -16,11 +16,13 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage';
 import LegalPage from './pages/LegalPage';
 import Seo from './components/Seo';
+import AnalyticsTracker from './components/AnalyticsTracker';
 
 export default function App() {
   return (
     <>
       <Seo />
+      <AnalyticsTracker />
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/services" element={<ServicesPage />} />

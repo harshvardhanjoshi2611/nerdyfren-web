@@ -4,7 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import useAuth from '../hooks/useAuth';
 import { authApi, getApiError } from '../lib/api';
-import { getRolePath } from '../lib/roleNavigation';
+import { getRolePath, roleWorkspaces } from '../lib/roleNavigation';
+import { trackEvent } from '../lib/analytics';
 
 export default function UserAuthPage({ mode }) {
   const isSignup = mode === 'signup';
@@ -18,6 +19,7 @@ export default function UserAuthPage({ mode }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    trackEvent(isSignup ? 'signup_started' : 'login_started', { method: contactType });
     setLoading(true);
     setError('');
     try {
@@ -26,12 +28,20 @@ export default function UserAuthPage({ mode }) {
         ? await authApi.signup({ name: form.name, password: form.password, ...contact })
         : await authApi.login({ identifier: form.identifier, password: form.password });
       startSession(result);
+      trackEvent(isSignup ? 'signup_completed' : 'login_completed', {
+        active_role: result.activeRole || 'client',
+      });
       const returnLocation = location.state?.from;
       const returnPath = returnLocation?.pathname
         ? `${returnLocation.pathname}${returnLocation.search || ''}${returnLocation.hash || ''}`
         : '';
+      const returnRole = Object.entries(roleWorkspaces).find(([, workspace]) => (
+        returnLocation?.pathname === workspace.path
+        || returnLocation?.pathname?.startsWith(`${workspace.path}/`)
+      ))?.[0];
+      const canReturn = returnPath && (!returnRole || (result.roles || []).includes(returnRole));
       navigate(
-        returnPath || getRolePath(result.activeRole),
+        canReturn ? returnPath : getRolePath(result.activeRole),
         { replace: true },
       );
     } catch (requestError) {

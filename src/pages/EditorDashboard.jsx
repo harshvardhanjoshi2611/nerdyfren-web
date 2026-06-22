@@ -75,7 +75,10 @@ export default function EditorDashboard() {
                   </div>
                 </Link>
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-                  <span className="text-sm font-medium">{formatMoney(project.amount)}</span>
+                  <div className="text-right">
+                    <span className="text-sm font-medium">{project.editor_payout_status && project.editor_payout_status !== 'not_set' ? formatMoney(project.editor_payout_amount || 0) : 'Payout not set'}</span>
+                    {project.editor_payout_status && project.editor_payout_status !== 'not_set' && <div className="mt-1"><StatusBadge status={project.editor_payout_status === 'paid' ? 'paid' : project.editor_payout_status} /></div>}
+                  </div>
                   {deliveryStatuses.includes(project.status) && (
                     <button type="button" onClick={() => setDeliveryProject(project)} className="btn-primary !px-3 !py-2 text-xs">
                       <Send size={14} /> Submit Delivery

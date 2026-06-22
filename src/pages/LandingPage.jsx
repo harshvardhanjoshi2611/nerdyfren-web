@@ -16,6 +16,7 @@ import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import useSiteContent from '../hooks/useSiteContent';
 import { buildWhatsAppLink } from '../lib/contactConfig';
+import { trackEvent } from '../lib/analytics';
 
 const services = [
   {
@@ -96,9 +97,9 @@ export default function LandingPage() {
             <h1 className="nf-hero-title">You shoot.<br /><span>We edit.</span></h1>
             <p className="nf-hero-sub">Reels, text overlays &amp; podcast editing — send the raw footage, we&apos;ll send back content that lands.</p>
             <div className="nf-hero-cta">
-              <Link to="/booking" className="nf-button-primary">Book Editor <ArrowRight size={17} /></Link>
+              <Link to="/booking" onClick={() => trackEvent('book_editor_click', { location: 'hero' })} className="nf-button-primary">Book Editor <ArrowRight size={17} /></Link>
               {whatsappHref && (
-                <a href={whatsappHref} target="_blank" rel="noreferrer" className="nf-hero-whatsapp">
+                <a href={whatsappHref} onClick={() => trackEvent('whatsapp_click', { context: 'homepage_hero' })} target="_blank" rel="noreferrer" className="nf-hero-whatsapp">
                   <span><MessageCircle size={12} /></span> Not sure yet? Chat on WhatsApp
                 </a>
               )}
@@ -141,7 +142,7 @@ export default function LandingPage() {
                 </ul>
                 <div className="nf-service-foot">
                   <p className="nf-service-price">{price}<span>one-time · INR</span></p>
-                  <Link to={`/booking?service=${id}`} className="nf-button-small">Book Now</Link>
+                  <Link to={`/booking?service=${id}`} onClick={() => trackEvent('book_editor_click', { location: 'service_card', service: id })} className="nf-button-small">Book Now</Link>
                 </div>
               </article>
             ))}

@@ -43,12 +43,31 @@ export const serviceMeta = {
 };
 
 export const fallbackServices = [
-  { id: 'trend-hopper', amount: 3500, bookable: true },
+  { id: 'trend-hopper', amount: 1000, bookable: true },
   { id: 'video-reel', amount: 2500, bookable: true },
   { id: 'video-copy', amount: 3000, bookable: true },
   { id: 'podcast', amount: 5000, bookable: true },
   { id: 'surge-reel', amount: null, bookable: false, coming_soon: true, surge_pricing: true },
 ];
+
+export const GST_RATE = 18;
+
+export function getPriceBreakdown(value = 0) {
+  if (value && typeof value === 'object') {
+    const base = Number(value.base_amount ?? value.amount ?? 0);
+    const rate = Number(value.gst_rate ?? GST_RATE);
+    const gst = Number(value.gst_amount ?? Math.round((base * rate) / 100));
+    return {
+      base_amount: base,
+      gst_rate: rate,
+      gst_amount: gst,
+      total_amount: Number(value.total_amount ?? value.payment_amount ?? base + gst),
+    };
+  }
+  const base = Number(value || 0);
+  const gst = Math.round((base * GST_RATE) / 100);
+  return { base_amount: base, gst_rate: GST_RATE, gst_amount: gst, total_amount: base + gst };
+}
 
 export const formatMoney = (amount = 0) =>
   new Intl.NumberFormat('en-IN', {

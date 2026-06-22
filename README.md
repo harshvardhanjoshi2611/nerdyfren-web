@@ -19,7 +19,7 @@ Production frontend for the NerdyFren managed creator marketplace.
 | `/services` | Live service catalog and pricing |
 | `/booking` | Canonical creator booking form |
 | `/book` | Backward-compatible booking alias |
-| `/booking/success` | Booking confirmation and customer-facing Request ID |
+| `/booking/success?requestId=NF-...&payment=success` | Verified payment result and customer-facing Request ID |
 | `/track` | Privacy-safe booking tracking |
 | `/privacy` | Public MVP privacy placeholder |
 | `/terms` | Public MVP terms placeholder |
@@ -130,7 +130,9 @@ uses bearer tokens, browser storage remains sensitive to cross-site scripting;
 keep the script and CMS surface narrow and move to secure, HTTP-only cookies if
 server-managed sessions are introduced.
 
-The frontend never sends service prices or payment claims during booking creation. Prices are loaded from the backend, and payments are confirmed only from the protected admin dashboard.
+The frontend never sends service prices or payment claims during booking creation. The backend calculates the service base price plus 18% GST, creates the Razorpay order for that final total, and verifies the checkout or webhook signature before marking a booking paid.
+
+Operational routes use the same white/ink/amber system as the approved public site. The Admin Analytics tab displays privacy-minimized 7-day and 30-day event summaries plus notification delivery logs. Analytics failures are intentionally silent and require no frontend secret.
 
 `VITE_API_URL` is the backend origin. The centralized client appends `/api/v1` to every endpoint. For backward compatibility, a value that already ends in `/api/v1` is normalized and also works.
 

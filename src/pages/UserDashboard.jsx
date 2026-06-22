@@ -9,9 +9,10 @@ import useAuth from '../hooks/useAuth';
 import useSiteContent from '../hooks/useSiteContent';
 import { clientApi, getApiError, userApi } from '../lib/api';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
-import { formatDate, formatMoney, getProjectName, serviceMeta } from '../lib/format';
+import { formatDate, formatMoney, getPriceBreakdown, getProjectName, serviceMeta } from '../lib/format';
 import { getProjectLinkLabel } from '../lib/projectLinks';
 import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
+import { trackEvent } from '../lib/analytics';
 
 export default function UserDashboard() {
   const { user, endSession } = useAuth();
@@ -56,6 +57,7 @@ export default function UserDashboard() {
     setActionBusy(`pay-${booking.id}`);
     setError('');
     try {
+      trackEvent('payment_started', { source: 'client_dashboard', service: booking.service_type }, { requestId: booking.request_id });
       const verified = await startRazorpayCheckout({
         booking: {
           ...booking,
@@ -74,13 +76,14 @@ export default function UserDashboard() {
         payment_status: 'paid',
       };
       sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(paidContext));
-      navigate('/booking/success', { state: paidContext });
+      trackEvent('payment_success', { source: 'client_dashboard' }, { requestId: paidContext.request_id });
+      navigate(`/booking/success?requestId=${encodeURIComponent(paidContext.request_id)}&payment=success`, { state: paidContext });
     } catch (requestError) {
-      setError(requestError instanceof PaymentCancelledError
-        ? 'Payment cancelled. This request remains Payment Pending.'
-        : requestError?.response
-          ? getApiError(requestError, 'Could not complete payment.')
-          : requestError.message || 'Could not complete payment.');
+      const state = requestError instanceof PaymentCancelledError ? 'cancelled' : 'failed';
+      trackEvent('payment_failed', { source: 'client_dashboard', reason: state }, { requestId: booking.request_id });
+      const failedContext = { ...booking, payment_status: 'pending', payment_state: state };
+      sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(failedContext));
+      navigate(`/booking/success?requestId=${encodeURIComponent(booking.request_id)}&payment=${state}`, { state: failedContext });
     } finally {
       setActionBusy('');
     }
@@ -109,8 +112,8 @@ export default function UserDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-white/[0.06] bg-canvas/80 backdrop-blur-xl">
+    <div className="nf-operational min-h-screen">
+      <header className="nf-ops-header border-b backdrop-blur-xl">
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-3">
@@ -162,18 +165,20 @@ export default function UserDashboard() {
           )}
           {!loading && !error && bookings.length > 0 && (
             <div className="space-y-4">
-              {sortedBookings.map((booking) => (
+              {sortedBookings.map((booking) => {
+                const pricing = getPriceBreakdown(booking);
+                return (
                 <article key={booking.id} className="panel p-5 sm:p-6">
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-slate-600">Project Name</p>
-                        <Link to={`/track?id=${encodeURIComponent(booking.request_id || booking.booking_ref)}`} className="mt-2 block font-semibold text-white hover:text-violet-300">{getProjectName(booking)}</Link>
+                        <Link to={`/track?requestId=${encodeURIComponent(booking.request_id || booking.booking_ref)}`} className="mt-2 block font-semibold text-white hover:text-violet-300">{getProjectName(booking)}</Link>
                         <p className="mt-2 break-all font-mono text-[11px] text-violet-300">{booking.request_id || booking.booking_ref}</p>
                       </div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Service</p><p className="mt-2 text-sm text-slate-300">{serviceMeta[booking.service_type]?.name || booking.service_type}</p></div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
-                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_status} /></div><p className="mt-2 text-xs text-slate-500">{formatMoney(booking.payment_amount ?? booking.amount)}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_status} /></div><p className="mt-2 text-xs text-slate-500">{formatMoney(booking.payment_amount ?? pricing.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Base {formatMoney(pricing.base_amount)} + GST {formatMoney(pricing.gst_amount)}</p></div>
                       <div><p className="text-[10px] uppercase tracking-wider text-slate-600">Date Created</p><p className="mt-2 text-sm text-slate-300">{formatDate(booking.created_at)}</p></div>
                     </div>
                   </div>
@@ -202,12 +207,13 @@ export default function UserDashboard() {
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link to={`/track?requestId=${encodeURIComponent(booking.request_id || booking.booking_ref)}`} className="btn-secondary !px-4 !py-2.5">Track Project</Link>
                     {booking.payment_status !== 'paid' && (
                       <button disabled={Boolean(actionBusy)} onClick={() => payBooking(booking)} className="btn-primary !px-4 !py-2.5">
                         {actionBusy === `pay-${booking.id}` ? <LoaderCircle className="animate-spin" size={15} /> : <CreditCard size={15} />} Pay now
                       </button>
                     )}
-                    {supportHref && <a href={supportHref} target="_blank" rel="noreferrer" className="btn-secondary !px-4 !py-2.5"><MessageCircle size={15} /> WhatsApp support</a>}
+                    {supportHref && <a href={supportHref} onClick={() => trackEvent('whatsapp_click', { context: 'client_dashboard' }, { requestId: booking.request_id })} target="_blank" rel="noreferrer" className="btn-secondary !px-4 !py-2.5"><MessageCircle size={15} /> WhatsApp support</a>}
                     {['draft_submitted', 'final_delivered'].includes(booking.status) && !booking.client_approved && (
                       <button disabled={Boolean(actionBusy)} onClick={() => approveBooking(booking.id)} className="btn-secondary !px-4 !py-2.5">
                         {actionBusy === `approve-${booking.id}` ? <LoaderCircle className="animate-spin" size={15} /> : <CheckCircle2 size={15} />} Approve delivery
@@ -230,7 +236,7 @@ export default function UserDashboard() {
                     </div>
                   )}
                 </article>
-              ))}
+              );})}
             </div>
           )}
         </section>

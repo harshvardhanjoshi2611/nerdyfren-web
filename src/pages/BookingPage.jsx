@@ -13,8 +13,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import useAuth from '../hooks/useAuth';
 import { bookingsApi, getApiError, servicesApi } from '../lib/api';
-import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
+import { fallbackServices, formatMoney, getPriceBreakdown, serviceMeta } from '../lib/format';
 import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
+import { trackEvent } from '../lib/analytics';
 
 const steps = ['Choose service', 'Submit brief', 'Review & pay'];
 const supportedServices = ['trend-hopper', 'video-reel', 'video-copy', 'podcast'];
@@ -115,6 +116,10 @@ export default function BookingPage() {
     }));
   }, [user]);
 
+  useEffect(() => {
+    trackEvent('booking_started', { service: initialService });
+  }, [initialService]);
+
   const displayServices = useMemo(() => supportedServices.map((id) => {
     const live = services.find((service) => service.id === id);
     const fallback = fallbackServices.find((service) => service.id === id);
@@ -126,6 +131,7 @@ export default function BookingPage() {
     };
   }), [services]);
   const selected = displayServices.find((service) => service.id === form.service_type);
+  const selectedPricing = getPriceBreakdown(selected?.amount || 0);
 
   const update = (event) => {
     const { name, type, checked, value } = event.target;
@@ -188,26 +194,39 @@ export default function BookingPage() {
         };
         setBookingContext(context);
         sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(context));
+        trackEvent('booking_submitted', { service: form.service_type }, { requestId: booking.request_id });
       }
 
       setPaymentMessage('Opening secure Razorpay Checkout...');
+      trackEvent('payment_started', { service: form.service_type }, { requestId: context.request_id });
       const verified = await startRazorpayCheckout({ booking: context, user });
       const paidContext = {
         ...context,
         ...verified,
-        amount: verified.amount,
+        amount: verified.total_amount ?? verified.amount,
         payment_status: 'paid',
       };
       sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(paidContext));
-      navigate('/booking/success', { state: paidContext });
+      trackEvent('payment_success', { service: form.service_type }, { requestId: paidContext.request_id });
+      navigate(`/booking/success?requestId=${encodeURIComponent(paidContext.request_id)}&payment=success`, { state: paidContext });
     } catch (requestError) {
       if (requestError instanceof PaymentCancelledError) {
-        setPaymentMessage('Payment cancelled. Your request is saved as Payment Pending.');
+        trackEvent('payment_failed', { reason: 'cancelled' }, { requestId: context?.request_id });
+        const cancelledContext = { ...context, payment_status: 'pending', payment_state: 'cancelled' };
+        sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(cancelledContext));
+        navigate(`/booking/success?requestId=${encodeURIComponent(context.request_id)}&payment=cancelled`, { state: cancelledContext });
       } else {
-        setPaymentMessage('');
-        setError(requestError?.response
-          ? getApiError(requestError, 'Payment could not be completed.')
-          : requestError.message || 'Payment could not be completed.');
+        trackEvent('payment_failed', { reason: 'checkout_error' }, { requestId: context?.request_id });
+        if (context?.request_id) {
+          const failedContext = { ...context, payment_status: 'pending', payment_state: 'failed' };
+          sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(failedContext));
+          navigate(`/booking/success?requestId=${encodeURIComponent(context.request_id)}&payment=failed`, { state: failedContext });
+        } else {
+          setPaymentMessage('');
+          setError(requestError?.response
+            ? getApiError(requestError, 'Payment could not be completed.')
+            : requestError.message || 'Payment could not be completed.');
+        }
       }
     } finally {
       setPaymentBusy(false);
@@ -254,7 +273,16 @@ export default function BookingPage() {
                 const active = form.service_type === service.id;
                 return (
                   <label key={service.id} className={`nf-booking-service ${active ? 'is-active' : ''}`}>
-                    <input type="radio" name="service_type" value={service.id} checked={active} onChange={update} />
+                    <input
+                      type="radio"
+                      name="service_type"
+                      value={service.id}
+                      checked={active}
+                      onChange={(event) => {
+                        update(event);
+                        trackEvent('service_selected', { service: service.id });
+                      }}
+                    />
                     <span className="nf-booking-service-check">{active && <Check size={15} />}</span>
                     <h3>{service.name}</h3>
                     <p>{service.short}</p>
@@ -279,7 +307,7 @@ export default function BookingPage() {
             </div>
             <div className="nf-booking-form-grid">
               <Field label="Customer name"><input required name="client_name" value={form.client_name} onChange={update} placeholder="Alex Morgan" /></Field>
-              <Field label="WhatsApp number"><input required name="client_phone" value={form.client_phone} onChange={update} placeholder="+91 98765 43210" /></Field>
+              <Field label="WhatsApp number" hint="WhatsApp updates will be sent to this number where available."><input required name="client_phone" value={form.client_phone} onChange={update} placeholder="+91 98765 43210" /></Field>
               <Field label="Email address"><input required type="email" name="client_email" value={form.client_email} onChange={update} placeholder="alex@creator.com" /></Field>
               <Field label="Deadline preference"><input name="deadline" value={form.deadline} onChange={update} placeholder="For example: Friday evening" /></Field>
             </div>
@@ -316,13 +344,16 @@ export default function BookingPage() {
               <div className="nf-booking-review-card">
                 <p>Service</p>
                 <h3>{selected.name}</h3>
-                <strong>{formatMoney(selected.amount)}</strong>
+                <strong>{formatMoney(selectedPricing.base_amount)}</strong>
                 <ul>
                   {(selected.includes || []).map((item) => <li key={item}><CheckCircle2 size={15} /> {item}</li>)}
                 </ul>
                 <dl>
                   <div><dt>Revision rounds</dt><dd>{selected.revisionCycles}</dd></div>
                   <div><dt>Delivery expectation</dt><dd>{selected.timeline}</dd></div>
+                  <div><dt>Service price</dt><dd>{formatMoney(selectedPricing.base_amount)}</dd></div>
+                  <div><dt>GST @ {selectedPricing.gst_rate}%</dt><dd>{formatMoney(selectedPricing.gst_amount)}</dd></div>
+                  <div><dt>Total payable</dt><dd>{formatMoney(selectedPricing.total_amount)}</dd></div>
                 </dl>
               </div>
               <div className="nf-booking-review-card">
@@ -354,7 +385,7 @@ export default function BookingPage() {
                 className="nf-button-primary"
               >
                 {paymentBusy ? <LoaderCircle className="animate-spin" size={17} /> : <CreditCard size={17} />}
-                {bookingContext ? 'Try payment again' : `Pay ${formatMoney(selected.amount)} with Razorpay`}
+                {bookingContext ? `Try payment again - ${formatMoney(selectedPricing.total_amount)}` : `Pay ${formatMoney(selectedPricing.total_amount)} with Razorpay`}
               </button>
             </div>
           </section>

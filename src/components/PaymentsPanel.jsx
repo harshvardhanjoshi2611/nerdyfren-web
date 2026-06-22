@@ -1,11 +1,13 @@
 import { Check, Download, LoaderCircle, ReceiptIndianRupee } from 'lucide-react';
 import { adminApi } from '../lib/api';
 import { downloadRowsCsv } from '../lib/csv';
-import { formatDateTime, formatMoney, humanize } from '../lib/format';
+import { formatDateTime, formatMoney, getPriceBreakdown, humanize } from '../lib/format';
 import StatusBadge from './StatusBadge';
 
 function paymentRows(bookings) {
-  return bookings.map((booking) => ({
+  return bookings.map((booking) => {
+    const pricing = getPriceBreakdown(booking);
+    return ({
     booking_id: booking.id,
     booking_reference: booking.booking_ref,
     client: booking.client_name,
@@ -14,11 +16,20 @@ function paymentRows(bookings) {
     razorpay_payment_id: booking.razorpay_payment_id || '',
     payment_method: booking.payment_method || '',
     verification_status: booking.payment_verified_at ? 'verified' : 'not_verified',
-    amount: booking.payment_amount ?? booking.amount,
+    base_amount: pricing.base_amount,
+    gst_rate: pricing.gst_rate,
+    gst_amount: pricing.gst_amount,
+    total_paid: booking.payment_amount ?? pricing.total_amount,
+    editor_payout: booking.editor_payout_amount ?? '',
+    payout_status: booking.editor_payout_status || 'not_set',
+    margin: booking.payment_status === 'paid'
+      ? (booking.payment_amount ?? pricing.total_amount) - (booking.editor_payout_amount || 0)
+      : '',
     status: booking.payment_status,
     payment_date: booking.payment_date || '',
     booking_date: booking.created_at,
-  }));
+    });
+  });
 }
 
 export default function PaymentsPanel({ pending, bookings, busy, action }) {
@@ -52,7 +63,8 @@ export default function PaymentsPanel({ pending, bookings, busy, action }) {
                 <p className="mt-5 font-semibold">{payment.client_name}</p>
                 <p className="mt-1 font-mono text-xs text-slate-600">{payment.booking_ref}</p>
                 <dl className="mt-5 grid grid-cols-2 gap-4 text-xs">
-                  <div><dt className="text-slate-600">Amount</dt><dd className="mt-1 text-sm font-medium text-slate-200">{formatMoney(payment.payment_amount)}</dd></div>
+                  <div><dt className="text-slate-600">Base + GST</dt><dd className="mt-1 text-sm font-medium text-slate-200">{formatMoney(payment.base_amount)} + {formatMoney(payment.gst_amount)}</dd></div>
+                  <div><dt className="text-slate-600">Total</dt><dd className="mt-1 text-sm font-medium text-slate-200">{formatMoney(payment.payment_amount)}</dd></div>
                   <div><dt className="text-slate-600">Submitted</dt><dd className="mt-1 text-slate-300">{formatDateTime(payment.submitted_at)}</dd></div>
                   <div className="col-span-2"><dt className="text-slate-600">Payment reference</dt><dd className="mt-1 break-all rounded-lg bg-black/20 p-3 font-mono text-sm text-cyan-300">{payment.payment_reference}</dd></div>
                 </dl>
@@ -100,19 +112,21 @@ export default function PaymentsPanel({ pending, bookings, busy, action }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06]">
-              {bookings.map((booking) => (
+            {bookings.map((booking) => {
+              const pricing = getPriceBreakdown(booking);
+              return (
                 <tr key={booking.id} className="transition hover:bg-white/[0.015]">
                   <td className="px-5 py-4 font-mono text-xs text-slate-400">{booking.booking_ref}</td>
                   <td className="px-5 py-4"><p className="text-slate-200">{booking.client_name}</p><p className="mt-1 text-xs text-slate-600">{booking.client_email}</p></td>
                   <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-cyan-300">{booking.payment_reference || '-'}</td>
                   <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-slate-400">{booking.razorpay_order_id || '-'}</td>
                   <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-cyan-300">{booking.razorpay_payment_id || '-'}</td>
-                  <td className="px-5 py-4">{formatMoney(booking.payment_amount ?? booking.amount)}</td>
+                  <td className="px-5 py-4"><p>{formatMoney(booking.payment_amount ?? pricing.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Base {formatMoney(pricing.base_amount)} · GST {formatMoney(pricing.gst_amount)}</p></td>
                   <td className="px-5 py-4"><StatusBadge status={booking.payment_status} /></td>
                   <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_verified_at ? `Verified${booking.payment_method ? ` via ${booking.payment_method}` : ''}` : 'Not verified'}</td>
                   <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_date ? formatDateTime(booking.payment_date) : humanize(booking.payment_status)}</td>
                 </tr>
-              ))}
+              );})}
               {!bookings.length && <tr><td colSpan="9" className="px-5 py-14 text-center text-slate-600">No payment records yet.</td></tr>}
             </tbody>
           </table>

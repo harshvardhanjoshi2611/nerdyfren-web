@@ -11,7 +11,7 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
@@ -25,6 +25,7 @@ import {
   serviceMeta,
 } from '../lib/format';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
+import { trackEvent } from '../lib/analytics';
 
 const journey = [
   'Brief Received',
@@ -81,8 +82,8 @@ function getJourneyIndex(booking) {
 
 export default function TrackingPage() {
   const [params, setParams] = useSearchParams();
-  const { isAuthenticated, loading: authLoading } = useAuth();
-  const requestedIdentifier = params.get('id') || params.get('request_id') || params.get('token');
+  const { isAuthenticated } = useAuth();
+  const requestedIdentifier = params.get('requestId') || params.get('id') || params.get('request_id') || params.get('token');
   const [identifier, setIdentifier] = useState(requestedIdentifier || '');
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState('');
@@ -103,7 +104,8 @@ export default function TrackingPage() {
     setBooking(result);
     setIdentifier(requestId || lookup);
     autoLoadedRef.current = requestId || lookup;
-    if (updateUrl && requestId) setParams({ id: requestId });
+    if (updateUrl && requestId) setParams({ requestId });
+    if (requestId) trackEvent('track_request_opened', {}, { requestId });
     return result;
   }, [setParams]);
 
@@ -206,28 +208,25 @@ export default function TrackingPage() {
     context: `Tracking page; status ${humanize(booking.status)}`,
   }));
 
-  if (!authLoading && isAuthenticated && !requestedIdentifier) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-canvas/85 backdrop-blur-xl">
+    <div className="nf-operational nf-track-page min-h-screen">
+      <header className="nf-track-header fixed inset-x-0 top-0 z-50 border-b backdrop-blur-xl">
         <div className="container-shell flex h-16 items-center justify-between">
           <Logo />
           <nav className="flex items-center gap-3 sm:gap-6">
             <Link to="/booking" className="text-xs text-slate-400 transition hover:text-white sm:text-sm">Start Project</Link>
             <Link to="/track" className="text-xs font-medium text-white sm:text-sm">Track Project</Link>
+            <Link to={isAuthenticated ? '/dashboard' : '/signin'} className="text-xs font-medium text-slate-500 sm:text-sm">{isAuthenticated ? 'Dashboard' : 'Sign In'}</Link>
           </nav>
         </div>
       </header>
 
-      <main className="aurora min-h-[820px] pb-24 pt-32">
+      <main className="nf-track-main min-h-[820px] pb-24 pt-32">
         <div className="container-shell">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="eyebrow"><ShieldCheck size={13} /> Private project tracking</span>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Know exactly where your project stands.</h1>
-            <p className="mt-4 text-slate-400">Enter the Request ID from your booking confirmation.</p>
+            <span className="eyebrow"><ShieldCheck size={13} /> Request ID tracking</span>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Track your edit</h1>
+            <p className="mt-4 text-slate-400">Enter your Request ID to see where your project stands.</p>
           </div>
 
           <form onSubmit={track} className="panel mx-auto mt-10 flex max-w-2xl flex-col gap-3 p-3 sm:flex-row">
@@ -254,7 +253,9 @@ export default function TrackingPage() {
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Request ID</p><p className="mt-2 break-all font-mono text-sm font-semibold">{requestId}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Service</p><p className="mt-2 font-semibold">{serviceMeta[booking.service_type]?.name || humanize(booking.service_type)}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
+                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_status || 'pending'} /></div></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Created Date</p><p className="mt-2 font-semibold">{formatDate(booking.created_at)}</p></div>
+                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Latest update</p><p className="mt-2 font-semibold">{booking.latest_update || humanize(booking.status)}</p></div>
               </div>
 
               {notice && <div className="mx-6 mb-6 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">{notice}</div>}

@@ -17,11 +17,12 @@ import PaymentsPanel from '../components/PaymentsPanel';
 import StatusBadge from '../components/StatusBadge';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi, getApiError } from '../lib/api';
-import { formatDateTime, formatMoney, getProjectName, humanize, serviceMeta } from '../lib/format';
+import { formatDateTime, formatMoney, getPriceBreakdown, getProjectName, humanize, serviceMeta } from '../lib/format';
 import { AuditPanel, ExportPanel, LeadsPanel, OperationsPanel, ReportsPanel, WorkloadPanel } from '../components/OperationsPanels';
 import { servicesApi } from '../lib/api';
 import { getProjectLinkLabel } from '../lib/projectLinks';
 import useAuth from '../hooks/useAuth';
+import AdminInsightsPanel from '../components/AdminInsightsPanel';
 
 const links = [{ label: 'Operations', to: '/dashboard/admin', icon: LayoutDashboard }];
 const projectStatuses = ['unassigned', 'assigned', 'work_in_progress', 'draft_submitted', 'awaiting_revision', 'final_delivered', 'completed', 'cancelled'];
@@ -32,7 +33,7 @@ export default function AdminDashboard() {
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
   const isSuperAdmin = roles.includes('super_admin');
-  const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
+  const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Analytics', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
   const { data, loading, error, reload } = useFetch(async () => {
     const [stats, bookings, payments, editors, services] = await Promise.all([
       adminApi.stats(),
@@ -121,6 +122,7 @@ export default function AdminDashboard() {
             {tab === 'Operations' && <OperationsPanel editors={data.editors} services={data.services} />}
             {tab === 'Payments' && <PaymentsPanel pending={data.payments} bookings={data.bookings} busy={busy} action={action} />}
             {tab === 'Projects' && <ProjectsTable items={data.bookings} editors={data.editors} busy={busy} action={action} />}
+            {tab === 'Analytics' && <AdminInsightsPanel />}
             {tab === 'Workload' && <WorkloadPanel editors={data.editors} services={data.services} />}
             {tab === 'Leads' && <LeadsPanel services={data.services} />}
             {tab === 'Editors' && <EditorsTable items={data.editors} busy={busy} action={action} />}
@@ -160,7 +162,7 @@ function ProjectsTable({ items, editors, busy, action }) {
 
   return (
     <div className="panel overflow-x-auto">
-      <table className="min-w-[1500px] w-full text-left text-sm">
+      <table className="min-w-[1800px] w-full text-left text-sm">
         <thead className="border-b border-white/[0.07] bg-white/[0.02] text-[10px] uppercase tracking-wider text-slate-600">
           <tr>
             <th className="px-4 py-4">Project Name</th>
@@ -168,6 +170,7 @@ function ProjectsTable({ items, editors, busy, action }) {
             <th className="px-4 py-4">Service</th>
             <th className="px-4 py-4">Status</th>
             <th className="px-4 py-4">Payment Status</th>
+            <th className="px-4 py-4">Job / Payout</th>
             <th className="px-4 py-4">Assigned Nerd</th>
             <th className="px-4 py-4">Booking Date & Time</th>
             <th className="px-4 py-4">Activity Log / Timeline</th>
@@ -175,6 +178,7 @@ function ProjectsTable({ items, editors, busy, action }) {
         </thead>
         <tbody className="divide-y divide-white/[0.06]">
           {items.map((booking) => {
+            const pricing = getPriceBreakdown(booking);
             const latest = booking.latest_activity || {
               activity_label: 'Booking Created',
               created_at: booking.created_at,
@@ -228,12 +232,18 @@ function ProjectsTable({ items, editors, busy, action }) {
                       <p>{booking.payment_verified_at ? 'Signature verified' : 'Verification pending'}</p>
                     </div>
                   )}
+                  <dl className="mt-3 space-y-1 text-[10px] text-slate-500">
+                    <div className="flex justify-between gap-3"><dt>Base</dt><dd>{formatMoney(pricing.base_amount)}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>GST</dt><dd>{formatMoney(pricing.gst_amount)}</dd></div>
+                    <div className="flex justify-between gap-3 font-semibold"><dt>Total</dt><dd>{formatMoney(booking.payment_amount ?? pricing.total_amount)}</dd></div>
+                  </dl>
                   {booking.payment_status !== 'paid' && (
                     <button disabled={!!busy} onClick={() => action(`pay-${booking.id}`, () => adminApi.updatePayment(booking.id, { payment_status: 'paid', payment_id: `manual-${Date.now()}` }), 'Payment marked as received.')} className="btn-secondary mt-3 !px-3 !py-2 text-xs">
                       {busy === `pay-${booking.id}` ? <LoaderCircle className="animate-spin" size={13} /> : <Check size={13} />} Mark paid
                     </button>
                   )}
                 </td>
+                <td className="px-4 py-5"><FinancialControls booking={booking} busy={busy} action={action} /></td>
                 <td className="px-4 py-5">
                   <p className="text-slate-300">{booking.editor_name || 'Unassigned'}</p>
                   <div className="mt-3 flex gap-2">
@@ -269,6 +279,26 @@ function ProjectsTable({ items, editors, busy, action }) {
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function FinancialControls({ booking, busy, action }) {
+  const [value, setValue] = useState({
+    job_type: booking.job_type || 'external',
+    editor_payout_amount: booking.editor_payout_amount ?? '',
+    editor_payout_status: booking.editor_payout_status || 'not_set',
+    payout_notes: booking.payout_notes || '',
+  });
+  const update = (key, nextValue) => setValue((current) => ({ ...current, [key]: nextValue }));
+  return (
+    <div className="min-w-64 space-y-2">
+      <div className="flex flex-wrap gap-2"><StatusBadge status={value.job_type === 'internal' ? 'assigned' : 'pending'} /><StatusBadge status={value.editor_payout_status === 'paid' ? 'paid' : value.editor_payout_status} /></div>
+      <select className="input !py-2 text-xs" value={value.job_type} onChange={(event) => update('job_type', event.target.value)}><option value="internal">Internal</option><option value="external">External</option></select>
+      <input className="input !py-2 text-xs" type="number" min="0" step="1" placeholder="Editor payout (INR)" value={value.editor_payout_amount} onChange={(event) => update('editor_payout_amount', event.target.value)} />
+      <select className="input !py-2 text-xs" value={value.editor_payout_status} onChange={(event) => update('editor_payout_status', event.target.value)}>{['not_set', 'pending', 'approved', 'paid'].map((status) => <option key={status} value={status}>{humanize(status)}</option>)}</select>
+      <textarea className="input min-h-20 !py-2 text-xs" maxLength={2000} placeholder="Admin-only payout notes" value={value.payout_notes} onChange={(event) => update('payout_notes', event.target.value)} />
+      <button disabled={!!busy} onClick={() => action(`financials-${booking.id}`, () => adminApi.updateFinancials(booking.id, { ...value, editor_payout_amount: value.editor_payout_amount === '' ? null : Number(value.editor_payout_amount) }), 'Job tagging and payout updated.')} className="btn-secondary !px-3 !py-2 text-xs">Save payout</button>
     </div>
   );
 }

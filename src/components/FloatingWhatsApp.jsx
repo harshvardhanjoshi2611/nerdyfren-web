@@ -4,6 +4,7 @@ import useAuth from '../hooks/useAuth';
 import useSiteContent from '../hooks/useSiteContent';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
 import { serviceMeta } from '../lib/format';
+import { trackEvent } from '../lib/analytics';
 
 const visiblePaths = new Set([
   '/',
@@ -30,7 +31,8 @@ export default function FloatingWhatsApp() {
     recentBooking = null;
   }
   const useRecentBooking = pathname === '/booking/success';
-  const requestId = params.get('id')
+  const requestId = params.get('requestId')
+    || params.get('id')
     || params.get('request_id')
     || (useRecentBooking ? recentBooking?.request_id || recentBooking?.booking_ref : '');
   const serviceType = useRecentBooking ? recentBooking?.service_type : '';
@@ -75,6 +77,7 @@ export default function FloatingWhatsApp() {
   return (
     <a
       href={href}
+      onClick={() => trackEvent('whatsapp_click', { context: contextLabels[pathname] || 'support' }, { requestId })}
       target="_blank"
       rel="noreferrer"
       className="nf-whatsapp-float"

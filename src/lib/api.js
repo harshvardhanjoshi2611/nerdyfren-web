@@ -23,6 +23,7 @@ export const API_ENDPOINTS = Object.freeze({
   paymentNotify: `${API_PREFIX}/payments/notify`,
   razorpayCreateOrder: `${API_PREFIX}/payments/razorpay/create-order`,
   razorpayVerify: `${API_PREFIX}/payments/razorpay/verify`,
+  analyticsEvent: `${API_PREFIX}/analytics/event`,
   clientApprove: `${API_PREFIX}/client/approve`,
   clientRevision: `${API_PREFIX}/client/revision`,
   adminForgotPassword: `${API_PREFIX}/admin/forgot-password`,
@@ -51,6 +52,9 @@ export const API_ENDPOINTS = Object.freeze({
   adminProjectAssignment: (id) => `${API_PREFIX}/admin/projects/${id}/assign`,
   adminProjectReassignment: (id) => `${API_PREFIX}/admin/projects/${id}/reassign`,
   adminProjectStatus: (id) => `${API_PREFIX}/admin/projects/${id}/status`,
+  adminProjectFinancials: (id) => `${API_PREFIX}/admin/projects/${id}/financials`,
+  adminAnalytics: `${API_PREFIX}/admin/analytics/summary`,
+  adminNotifications: `${API_PREFIX}/admin/notifications`,
   adminApplicationApproval: (id) => `${API_PREFIX}/admin/applications/${id}/approve`,
   adminApplicationRejection: (id) => `${API_PREFIX}/admin/applications/${id}/reject`,
   adminEditorDeactivation: (id) => `${API_PREFIX}/admin/editors/${id}/deactivate`,
@@ -210,6 +214,10 @@ export const paymentsApi = {
   ).then((r) => expectObject(r.data, 'Razorpay verification')),
 };
 
+export const analyticsApi = {
+  track: (data) => api.post(API_ENDPOINTS.analyticsEvent, data).then((r) => r.data),
+};
+
 export const clientApi = {
   approve: (data) => api.post(API_ENDPOINTS.clientApprove, data).then((r) => expectObject(r.data, 'delivery approval')),
   requestRevision: (data) => api.post(API_ENDPOINTS.clientRevision, data).then((r) => expectObject(r.data, 'revision request')),
@@ -266,6 +274,9 @@ export const adminApi = {
   assign: (id, editorId) => api.post(API_ENDPOINTS.adminProjectAssignment(id), { editor_id: editorId }).then((r) => r.data),
   reassign: (id, editorId) => api.post(API_ENDPOINTS.adminProjectReassignment(id), { editor_id: editorId }).then((r) => r.data),
   updateStatus: (id, status) => api.patch(API_ENDPOINTS.adminProjectStatus(id), { status }).then((r) => r.data),
+  updateFinancials: (id, data) => api.patch(API_ENDPOINTS.adminProjectFinancials(id), data).then((r) => r.data),
+  analytics: (range = '7d') => api.get(API_ENDPOINTS.adminAnalytics, { params: { range } }).then((r) => r.data),
+  notifications: (limit = 200) => api.get(API_ENDPOINTS.adminNotifications, { params: { limit } }).then((r) => r.data),
   approve: (id, data) => api.post(API_ENDPOINTS.adminApplicationApproval(id), data).then((r) => r.data),
   reject: (id, notes) => api.post(API_ENDPOINTS.adminApplicationRejection(id), { notes }).then((r) => r.data),
   deactivate: (id) => api.patch(API_ENDPOINTS.adminEditorDeactivation(id)).then((r) => r.data),
