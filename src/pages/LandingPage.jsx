@@ -25,7 +25,7 @@ const services = [
     tag: 'Trend Hopper',
     description: 'Quick-turnaround trend-based reel edit for creators who want to jump on what is currently working.',
     bullets: ['Trend-style cut', 'Hook + pacing optimized', 'Captions / beat sync included', 'Fast delivery'],
-    price: 'Starting ₹3,500',
+    price: 'Starting ₹1,000',
     icon: TrendingUp,
   },
   {
