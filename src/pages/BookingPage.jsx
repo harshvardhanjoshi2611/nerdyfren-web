@@ -131,7 +131,7 @@ export default function BookingPage() {
     };
   }), [services]);
   const selected = displayServices.find((service) => service.id === form.service_type);
-  const selectedPricing = getPriceBreakdown(selected?.amount || 0);
+  const selectedPricing = getPriceBreakdown(selected || 0);
 
   const update = (event) => {
     const { name, type, checked, value } = event.target;
