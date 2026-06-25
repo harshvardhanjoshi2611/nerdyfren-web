@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { runtimeConfig } from '../lib/runtimeConfig';
 
 const brandDescription = 'NerdyFren connects creators with verified video editors, thumbnail designers, and content managers through a managed delivery workflow.';
+const socialImageAlt = 'NerdyFren.com — human video editing from raw footage to ready-to-post content';
 
 const publicRoutes = {
   '/': {
@@ -61,7 +62,7 @@ export default function Seo() {
     const title = page?.title || 'NerdyFren';
     const description = page?.description || brandDescription;
     const canonicalUrl = `${runtimeConfig.siteUrl}${canonicalPath === '/' ? '' : canonicalPath}`;
-    const imageUrl = runtimeConfig.ogImageUrl || `${runtimeConfig.siteUrl}/social-preview.svg`;
+    const imageUrl = runtimeConfig.ogImageUrl;
 
     document.title = title;
     setMeta('meta[name="description"]', { name: 'description', content: description });
@@ -70,14 +71,21 @@ export default function Seo() {
       content: page ? 'index, follow' : 'noindex, nofollow',
     });
     setMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
+    setMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'NerdyFren.com' });
     setMeta('meta[property="og:title"]', { property: 'og:title', content: title });
     setMeta('meta[property="og:description"]', { property: 'og:description', content: description });
     setMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
     setMeta('meta[property="og:image"]', { property: 'og:image', content: imageUrl });
+    setMeta('meta[property="og:image:secure_url"]', { property: 'og:image:secure_url', content: imageUrl });
+    setMeta('meta[property="og:image:type"]', { property: 'og:image:type', content: 'image/png' });
+    setMeta('meta[property="og:image:width"]', { property: 'og:image:width', content: '1200' });
+    setMeta('meta[property="og:image:height"]', { property: 'og:image:height', content: '630' });
+    setMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: socialImageAlt });
     setMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     setMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: title });
     setMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
     setMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: imageUrl });
+    setMeta('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: socialImageAlt });
 
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if (!canonical) {

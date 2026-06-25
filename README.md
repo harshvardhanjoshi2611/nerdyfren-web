@@ -45,7 +45,6 @@ VITE_API_URL=http://localhost:3001
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
 VITE_RAZORPAY_KEY_ID=rzp_test_or_live_key_id
 VITE_SITE_URL=http://localhost:5173
-VITE_OG_IMAGE_URL=
 VITE_SUPPORT_EMAIL=support@your-domain.example
 VITE_MOTHERSHIP_URL=https://your-mothership.example
 VITE_MERCH_URL=https://your-merch-store.example
@@ -101,10 +100,33 @@ For preview deployments, either add the specific preview origin to the backend a
 
 The included `vercel.json` sends client-side routes back to `index.html`, so direct visits to dashboard and tracking routes work.
 
-The `public` directory includes the launch favicon, social-preview placeholder,
-`robots.txt`, and `sitemap.xml`. The sitemap currently uses the expected
-NerdyFren canonical hostname; update its URLs and the robots sitemap line if the
-purchased domain differs.
+The `public` directory includes the production favicon/icon set, the versioned
+1200×630 social preview, `robots.txt`, and `sitemap.xml`. The canonical
+production origin is `https://www.nerdyfren.com`.
+
+### Social share preview
+
+The static metadata in `index.html` is the source of truth for WhatsApp and
+other crawlers that do not execute the React app. It uses the absolute,
+cache-versioned image URL:
+
+```text
+https://www.nerdyfren.com/nerdyfren-social-preview-v3.png
+```
+
+After deploying, verify the raw HTML and image before sharing:
+
+```bash
+curl -s https://www.nerdyfren.com/ | grep -E "og:|twitter:|canonical"
+curl -I https://www.nerdyfren.com/nerdyfren-social-preview-v3.png
+```
+
+WhatsApp and other social apps cache link previews and provide no guaranteed
+public purge control. The `v3` filename invalidates the old image cache. If the
+page card itself remains stale, request a fresh scrape in Meta's Sharing
+Debugger (`https://developers.facebook.com/tools/debug/`) and test the page once
+with a harmless query string such as `https://www.nerdyfren.com/?share=20260625`.
+The canonical URL remains the clean production URL.
 
 ### Vercel CLI
 

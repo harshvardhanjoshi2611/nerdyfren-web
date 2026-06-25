@@ -71,7 +71,7 @@ export const runtimeConfig = Object.freeze({
     : '',
   isDevelopment,
   razorpayKeyId,
-  ogImageUrl: normalizePublicUrl(import.meta.env.VITE_OG_IMAGE_URL, 'VITE_OG_IMAGE_URL'),
+  ogImageUrl: `${siteUrl}/nerdyfren-social-preview-v3.png`,
   publicLinks: Object.freeze({
     instagram: normalizePublicUrl(import.meta.env.VITE_INSTAGRAM_URL, 'VITE_INSTAGRAM_URL'),
     merch: normalizePublicUrl(import.meta.env.VITE_MERCH_URL, 'VITE_MERCH_URL'),
