@@ -7,7 +7,7 @@ import { authApi, getApiError } from '../lib/api';
 import { getRolePath, roleWorkspaces } from '../lib/roleNavigation';
 import { trackEvent } from '../lib/analytics';
 
-export default function UserAuthPage({ mode }) {
+export default function UserAuthPage({ mode, preferredRole = null }) {
   const isSignup = mode === 'signup';
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,7 +26,11 @@ export default function UserAuthPage({ mode }) {
       const contact = { [contactType]: form.identifier.trim() };
       const result = isSignup
         ? await authApi.signup({ name: form.name, password: form.password, ...contact })
-        : await authApi.login({ identifier: form.identifier, password: form.password });
+        : await authApi.login({
+          identifier: form.identifier,
+          password: form.password,
+          ...(preferredRole ? { preferredRole } : {}),
+        });
       startSession(result);
       trackEvent(isSignup ? 'signup_completed' : 'login_completed', {
         active_role: result.activeRole || 'client',
@@ -40,8 +44,11 @@ export default function UserAuthPage({ mode }) {
         || returnLocation?.pathname?.startsWith(`${workspace.path}/`)
       ))?.[0];
       const canReturn = returnPath && (!returnRole || (result.roles || []).includes(returnRole));
+      const needsNerdProfile = result.activeRole === 'editor'
+        && result.user?.canAccessNerd
+        && !result.user?.nerdAssignable;
       navigate(
-        canReturn ? returnPath : getRolePath(result.activeRole),
+        needsNerdProfile ? '/dashboard/editor/profile' : canReturn ? returnPath : getRolePath(result.activeRole),
         { replace: true },
       );
     } catch (requestError) {
@@ -62,7 +69,9 @@ export default function UserAuthPage({ mode }) {
             <p className="nf-auth-intro">
               {isSignup
                 ? 'Book editors, track requests, manage revisions, and keep your content moving.'
-                : 'Sign in to manage your bookings, payments, edits, and workspace access.'}
+                : preferredRole === 'editor'
+                  ? 'Sign in to open your Nerd workspace, complete your profile, and manage assigned projects.'
+                  : 'Sign in to manage your bookings, payments, edits, and workspace access.'}
             </p>
 
             <div className="nf-auth-tabs">

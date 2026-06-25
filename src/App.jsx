@@ -5,6 +5,7 @@ import BookingPage from './pages/BookingPage';
 import BookingSuccessPage from './pages/BookingSuccessPage';
 import EditorDashboard from './pages/EditorDashboard';
 import LandingPage from './pages/LandingPage';
+import NerdProfilePage from './pages/NerdProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import ServicesPage from './pages/ServicesPage';
@@ -42,11 +43,14 @@ export default function App() {
         <Route path="/dashboard/client" element={<UserDashboard />} />
       </Route>
       <Route path="/dashboard" element={<Navigate to="/dashboard/client" replace />} />
-      <Route path="/editor/signin" element={<Navigate to="/signin" replace />} />
-      <Route path="/editor/login" element={<Navigate to="/signin" replace />} />
+      <Route path="/editor/signin" element={<UserAuthPage mode="signin" preferredRole="editor" />} />
+      <Route path="/editor/login" element={<UserAuthPage mode="signin" preferredRole="editor" />} />
       <Route path="/editor/forgot-password" element={<PasswordRecoveryPage role="editor" />} />
       <Route path="/editor/reset-password" element={<PasswordRecoveryPage role="editor" mode="reset" />} />
       <Route element={<ProtectedRoute role="editor" />}>
+        <Route path="/dashboard/editor/profile" element={<NerdProfilePage />} />
+        <Route path="/nerd/profile" element={<Navigate to="/dashboard/editor/profile" replace />} />
+        <Route path="/editor/profile" element={<Navigate to="/dashboard/editor/profile" replace />} />
         <Route path="/dashboard/editor" element={<EditorDashboard />} />
         <Route path="/dashboard/editor/projects/:id" element={<ProjectDetailsPage />} />
       </Route>

@@ -156,6 +156,7 @@ function MetricBar({ label, value, total, detail }) {
 
 function ProjectsTable({ items, editors, busy, action }) {
   const [assignments, setAssignments] = useState({});
+  const assignableEditors = editors.filter((editor) => editor.assignable);
   const [statusOverrides, setStatusOverrides] = useState({});
 
   if (!items.length) return <div className="panel"><Empty label="No projects yet" /></div>;
@@ -249,13 +250,14 @@ function ProjectsTable({ items, editors, busy, action }) {
                   <div className="mt-3 flex gap-2">
                     <select value={assignments[booking.id] || ''} onChange={(event) => setAssignments({ ...assignments, [booking.id]: event.target.value })} className="input min-w-40 !py-2 text-xs">
                       <option value="">Choose Nerd</option>
-                      {editors.filter((editor) => editor.is_active).map((editor) => <option key={editor.id} value={editor.id}>{editor.name}</option>)}
+                      {assignableEditors.map((editor) => <option key={editor.id} value={editor.id}>{editor.name}</option>)}
                     </select>
                     <button disabled={!assignments[booking.id] || booking.payment_status !== 'paid' || !!busy} onClick={() => action(`assign-${booking.id}`, () => booking.assigned_to ? adminApi.reassign(booking.id, Number(assignments[booking.id])) : adminApi.assign(booking.id, Number(assignments[booking.id])), booking.assigned_to ? 'Project reassigned.' : 'Nerd assigned.')} className="btn-primary !px-3 !py-2 text-xs">
                       {booking.assigned_to ? 'Reassign' : 'Assign'}
                     </button>
                   </div>
                   {booking.payment_status !== 'paid' && <p className="mt-2 text-[10px] text-slate-600">Confirm payment before assignment.</p>}
+                  {!assignableEditors.length && <p className="mt-2 text-[10px] text-amber-300">No active Nerds available. Complete Nerd profile or activate a Nerd from Nerds panel.</p>}
                 </td>
                 <td className="px-4 py-5 text-xs text-slate-400">{formatDateTime(booking.created_at)}</td>
                 <td className="px-4 py-5">
@@ -314,6 +316,10 @@ function EditorsTable({ items, busy, action }) {
           </div>
           <h3 className="mt-5 font-medium">{editor.name}</h3>
           <p className="mt-1 text-xs text-slate-500">{editor.email}</p>
+          <div className="mt-3 space-y-1 text-xs text-slate-500">
+            <p>Role: Nerd · Profile: {editor.profile_status === 'ready' ? 'Complete' : 'Incomplete'}</p>
+            <p>{editor.assignable ? 'Assignable' : `Not assignable${editor.assignment_status_reason ? ` — ${editor.assignment_status_reason}` : ''}`}</p>
+          </div>
           <div className="mt-4 flex flex-wrap gap-1.5">{(editor.skills || []).map((skill) => <span key={skill} className="rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-slate-400">{skill}</span>)}</div>
           <div className="mt-5 flex items-center justify-between border-t border-white/[0.07] pt-4">
             <span className="text-xs text-slate-600">Rating {editor.rating?.toFixed(1)}</span>
