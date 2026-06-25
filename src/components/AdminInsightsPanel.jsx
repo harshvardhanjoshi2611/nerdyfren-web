@@ -1,4 +1,4 @@
-import { Activity, MousePointerClick, ReceiptIndianRupee, UsersRound } from 'lucide-react';
+import { Activity, MousePointerClick, ReceiptIndianRupee, RefreshCw, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi } from '../lib/api';
@@ -8,6 +8,7 @@ import StatusBadge from './StatusBadge';
 
 export default function AdminInsightsPanel() {
   const [range, setRange] = useState('7d');
+  const [busy, setBusy] = useState('');
   const { data, loading, error, reload } = useFetch(async () => {
     const [summary, notifications] = await Promise.all([
       adminApi.analytics(range),
@@ -25,6 +26,15 @@ export default function AdminInsightsPanel() {
     [MousePointerClick, 'Booking starts', data.summary.booking_starts],
     [ReceiptIndianRupee, 'Payment successes', data.summary.payment_successes],
   ];
+  const retry = async (id) => {
+    setBusy(`retry-${id}`);
+    try {
+      await adminApi.retryNotification(id);
+      await reload();
+    } finally {
+      setBusy('');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -65,10 +75,10 @@ export default function AdminInsightsPanel() {
 
       <section className="panel overflow-x-auto">
         <div className="border-b border-white/[0.07] p-5"><h3 className="font-semibold">Notification delivery log</h3><p className="mt-1 text-xs text-slate-500">Email and WhatsApp attempts never block project updates.</p></div>
-        <table className="min-w-[900px] w-full text-left text-sm">
-          <thead><tr><th className="px-4 py-3">When</th><th className="px-4 py-3">Request ID</th><th className="px-4 py-3">Channel</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Provider</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Result</th></tr></thead>
+        <table className="min-w-[1100px] w-full text-left text-sm">
+          <thead><tr><th className="px-4 py-3">When</th><th className="px-4 py-3">Request ID</th><th className="px-4 py-3">Channel</th><th className="px-4 py-3">Event</th><th className="px-4 py-3">Recipient</th><th className="px-4 py-3">Provider</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Result</th><th className="px-4 py-3">Action</th></tr></thead>
           <tbody>
-            {data.notifications.map((item) => <tr key={item.id} className="border-t border-white/[0.06]"><td className="px-4 py-3 text-xs">{formatDateTime(item.created_at)}</td><td className="px-4 py-3 font-mono text-xs">{item.request_id || '-'}</td><td className="px-4 py-3">{humanize(item.channel)}</td><td className="px-4 py-3">{humanize(item.notification_type)}</td><td className="px-4 py-3">{humanize(item.provider)}</td><td className="px-4 py-3"><StatusBadge status={item.status} /></td><td className="max-w-xs px-4 py-3 text-xs text-slate-500">{item.error_message || item.provider_response || '-'}</td></tr>)}
+            {data.notifications.map((item) => <tr key={item.id} className="border-t border-white/[0.06]"><td className="px-4 py-3 text-xs">{formatDateTime(item.created_at)}</td><td className="px-4 py-3 font-mono text-xs">{item.request_id || '-'}</td><td className="px-4 py-3">{humanize(item.channel)}</td><td className="px-4 py-3">{humanize(item.event_type || item.notification_type)}</td><td className="px-4 py-3 text-xs">{item.recipient_email || item.recipient_phone || item.recipient_role || '-'}</td><td className="px-4 py-3">{humanize(item.provider)}</td><td className="px-4 py-3"><StatusBadge status={item.status} /></td><td className="max-w-xs px-4 py-3 text-xs text-slate-500">{item.failure_reason || item.error_message || item.provider_message_id || '-'}</td><td className="px-4 py-3">{['failed', 'skipped'].includes(item.status) ? <button className="btn-secondary !px-3 !py-2 text-xs" disabled={busy === `retry-${item.id}`} onClick={() => retry(item.id)}>{busy === `retry-${item.id}` ? 'Retrying' : <><RefreshCw size={13} /> Retry</>}</button> : '-'}</td></tr>)}
           </tbody>
         </table>
       </section>
