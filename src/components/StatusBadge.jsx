@@ -9,14 +9,19 @@ const tones = {
   awaiting_revision: 'border-rose-700/20 bg-rose-50 text-rose-800',
   final_delivered: 'border-emerald-700/20 bg-emerald-50 text-emerald-800',
   completed: 'border-emerald-700/20 bg-emerald-50 text-emerald-800',
+  processed: 'border-emerald-700/20 bg-emerald-50 text-emerald-800',
   assigned: 'border-amber-700/20 bg-amber-50 text-amber-900',
   pending: 'border-amber-700/20 bg-amber-50 text-amber-900',
   queued: 'border-amber-700/20 bg-amber-50 text-amber-900',
+  not_requested: 'border-slate-500/20 bg-slate-100 text-slate-700',
+  not_applicable: 'border-slate-500/20 bg-slate-100 text-slate-700',
   skipped: 'border-slate-500/20 bg-slate-100 text-slate-700',
   unassigned: 'border-amber-700/20 bg-amber-50 text-amber-900',
   revision: 'border-orange-700/20 bg-orange-50 text-orange-800',
   failed: 'border-red-700/20 bg-red-50 text-red-800',
+  cancelled: 'border-red-700/20 bg-red-50 text-red-800',
   refunded: 'border-slate-500/20 bg-slate-100 text-slate-700',
+  manual_refunded: 'border-violet-700/20 bg-violet-50 text-violet-800',
 };
 
 export default function StatusBadge({ status }) {

@@ -9,12 +9,14 @@ import {
   LayoutDashboard,
   LoaderCircle,
   RefreshCw,
+  XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import DashboardShell from '../components/DashboardShell';
 import { ErrorState, LoadingState } from '../components/PageState';
 import PaymentsPanel from '../components/PaymentsPanel';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 import { useFetch } from '../hooks/useFetch';
 import { adminApi, getApiError } from '../lib/api';
 import { formatDateTime, formatMoney, getPriceBreakdown, getProjectName, humanize, serviceMeta } from '../lib/format';
@@ -158,18 +160,20 @@ function ProjectsTable({ items, editors, busy, action }) {
   const [assignments, setAssignments] = useState({});
   const assignableEditors = editors.filter((editor) => editor.assignable);
   const [statusOverrides, setStatusOverrides] = useState({});
+  const [cancelBooking, setCancelBooking] = useState(null);
 
   if (!items.length) return <div className="panel"><Empty label="No projects yet" /></div>;
 
   return (
     <div className="panel overflow-x-auto">
-      <table className="min-w-[1800px] w-full text-left text-sm">
+      <table className="min-w-[1950px] w-full text-left text-sm">
         <thead className="border-b border-white/[0.07] bg-white/[0.02] text-[10px] uppercase tracking-wider text-slate-600">
           <tr>
             <th className="px-4 py-4">Project Name</th>
             <th className="px-4 py-4">Client/User Name</th>
             <th className="px-4 py-4">Service</th>
             <th className="px-4 py-4">Status</th>
+            <th className="px-4 py-4">Cancel / Refund</th>
             <th className="px-4 py-4">Payment Status</th>
             <th className="px-4 py-4">Job / Payout</th>
             <th className="px-4 py-4">Assigned Nerd</th>
@@ -223,6 +227,19 @@ function ProjectsTable({ items, editors, busy, action }) {
                     </select>
                     <button disabled={!!busy} onClick={() => action(`status-${booking.id}`, () => adminApi.updateStatus(booking.id, statusOverrides[booking.id] || booking.status), 'Project status updated.')} className="btn-secondary !px-3 !py-2 text-xs">Update</button>
                   </div>
+                  {booking.cancellation_reason && (
+                    <p className="mt-2 max-w-48 text-[10px] leading-4 text-slate-500">Reason: {booking.cancellation_reason}</p>
+                  )}
+                </td>
+                <td className="px-4 py-5">
+                  <StatusBadge status={booking.refund_status || (booking.status === 'cancelled' ? 'not_applicable' : 'not_requested')} />
+                  {booking.refund_amount ? <p className="mt-2 text-xs text-slate-500">{formatMoney(booking.refund_amount)}</p> : null}
+                  {booking.razorpay_refund_id ? <p className="mt-1 max-w-44 break-all font-mono text-[10px] text-slate-600">{booking.razorpay_refund_id}</p> : null}
+                  {booking.status !== 'cancelled' && (
+                    <button disabled={!!busy} onClick={() => setCancelBooking(booking)} className="btn-secondary mt-3 !px-3 !py-2 text-xs">
+                      <XCircle size={13} /> Cancel Request
+                    </button>
+                  )}
                 </td>
                 <td className="px-4 py-5">
                   <StatusBadge status={booking.payment_status} />
@@ -281,7 +298,82 @@ function ProjectsTable({ items, editors, busy, action }) {
           })}
         </tbody>
       </table>
+      {cancelBooking && (
+        <CancelRequestModal
+          booking={cancelBooking}
+          busy={busy}
+          onClose={() => setCancelBooking(null)}
+          onCancel={(payload) => action(
+            `cancel-${cancelBooking.id}`,
+            () => adminApi.cancelProject(cancelBooking.id, payload),
+            'Request cancelled and refund status saved.'
+          ).then(() => setCancelBooking(null))}
+        />
+      )}
     </div>
+  );
+}
+
+function CancelRequestModal({ booking, busy, onClose, onCancel }) {
+  const [value, setValue] = useState({
+    cancellation_reason: '',
+    refund_action: 'cancel_only',
+    refund_amount: '',
+    refund_reason: '',
+  });
+  const paid = booking.payment_status === 'paid' && Boolean(booking.razorpay_payment_id);
+  const update = (key, next) => setValue((current) => ({ ...current, [key]: next }));
+  const submit = (event) => {
+    event.preventDefault();
+    onCancel({
+      cancellation_reason: value.cancellation_reason,
+      refund_action: paid ? value.refund_action : 'cancel_only',
+      refund_amount: value.refund_action === 'partial_refund' && value.refund_amount ? Number(value.refund_amount) : undefined,
+      refund_reason: value.refund_reason || value.cancellation_reason,
+    });
+  };
+  return (
+    <Modal title="Cancel Request" eyebrow={booking.booking_ref} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="rounded-xl border border-amber-300/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+          This will mark the request as Cancelled. The record will stay saved in Admin and client tracking.
+        </p>
+        <label className="block">
+          <span className="label">Cancellation reason</span>
+          <textarea required minLength={3} maxLength={2000} className="input mt-2 min-h-28" value={value.cancellation_reason} onChange={(event) => update('cancellation_reason', event.target.value)} placeholder="Explain why this request is being cancelled." />
+        </label>
+        {paid ? (
+          <div className="space-y-3">
+            <label className="block">
+              <span className="label">Refund choice</span>
+              <select className="input mt-2" value={value.refund_action} onChange={(event) => update('refund_action', event.target.value)}>
+                <option value="cancel_only">Cancel only</option>
+                <option value="full_refund">Cancel + full refund</option>
+                <option value="partial_refund">Cancel + partial refund</option>
+              </select>
+            </label>
+            {value.refund_action === 'partial_refund' && (
+              <label className="block">
+                <span className="label">Partial refund amount</span>
+                <input required className="input mt-2" type="number" min="1" step="1" value={value.refund_amount} onChange={(event) => update('refund_amount', event.target.value)} />
+              </label>
+            )}
+            <label className="block">
+              <span className="label">Refund reason</span>
+              <input className="input mt-2" value={value.refund_reason} onChange={(event) => update('refund_reason', event.target.value)} placeholder="Optional; defaults to cancellation reason" />
+            </label>
+          </div>
+        ) : (
+          <p className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-sm text-slate-400">No successful Razorpay payment found. Refund status will be saved as not applicable.</p>
+        )}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className="btn-secondary">Keep request</button>
+          <button disabled={!!busy || value.cancellation_reason.trim().length < 3} className="btn-primary">
+            {busy ? 'Cancelling...' : 'Confirm cancellation'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

@@ -260,6 +260,18 @@ export default function TrackingPage() {
 
               {notice && <div className="mx-6 mb-6 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">{notice}</div>}
               {actionError && <div className="mx-6 mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-300">{actionError}</div>}
+              {booking.status === 'cancelled' && (
+                <div className="mx-6 mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
+                  <p className="font-semibold">This request has been cancelled.</p>
+                  {booking.cancellation?.reason && <p className="mt-2">Reason: {booking.cancellation.reason}</p>}
+                  {booking.cancellation?.refund_status && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-slate-300">Refund status:</span>
+                      <StatusBadge status={booking.cancellation.refund_status} />
+                    </div>
+                  )}
+                </div>
+              )}
               {booking.access_level === 'status' && (
                 <div className="mx-6 mb-6 rounded-xl border border-violet-400/20 bg-violet-500/[0.07] p-4 text-sm leading-6 text-violet-200">
                   This Request ID shows status only. Sign in as the booking owner or open the original booking confirmation to view delivery details and take action.

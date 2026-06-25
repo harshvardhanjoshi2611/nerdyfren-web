@@ -79,6 +79,8 @@ export default function BookingSuccessPage() {
 
         <div className="nf-success-actions">
           <Link to={`/track?requestId=${encodeURIComponent(requestId)}`} className="nf-button-primary">Track Project <ArrowRight size={17} /></Link>
+          <Link to="/booking" className="nf-booking-secondary">Book another edit</Link>
+          <Link to="/" className="nf-booking-secondary">Go to home</Link>
           <Link to="/dashboard/client" className="nf-booking-secondary">{paid ? 'Go to Dashboard' : 'Retry from Dashboard'}</Link>
           {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" className="nf-booking-secondary"><MessageCircle size={16} /> WhatsApp support</a>}
         </div>
