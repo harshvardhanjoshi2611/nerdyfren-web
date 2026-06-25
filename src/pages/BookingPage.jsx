@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import useAuth from '../hooks/useAuth';
-import { bookingsApi, getApiError, servicesApi } from '../lib/api';
+import { authApi, bookingsApi, getApiError, servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, getPriceBreakdown, serviceMeta } from '../lib/format';
 import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
 import { trackEvent } from '../lib/analytics';
@@ -67,7 +67,7 @@ function Field({ label, hint, children }) {
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, startSession } = useAuth();
   const requestedService = searchParams.get('service');
   const initialService = supportedServices.includes(requestedService)
     ? requestedService
@@ -111,7 +111,7 @@ export default function BookingPage() {
     setForm((current) => ({
       ...current,
       client_name: current.client_name || user.name || '',
-      client_email: current.client_email || user.email || '',
+      client_email: current.client_email || user.contact_email || user.email || '',
       client_phone: current.client_phone || user.mobile || '',
     }));
   }, [user]);
@@ -194,6 +194,11 @@ export default function BookingPage() {
         };
         setBookingContext(context);
         sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(context));
+        if (user) {
+          authApi.me()
+            .then(startSession)
+            .catch(() => {});
+        }
         trackEvent('booking_submitted', { service: form.service_type }, { requestId: booking.request_id });
       }
 
