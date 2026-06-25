@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
   const isSuperAdmin = roles.includes('super_admin');
-  const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Analytics', 'Workload', 'Leads', 'Editors', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
+  const tabs = ['Reports', 'Operations', 'Payments', 'Projects', 'Analytics', 'Workload', 'Leads', 'Nerds', 'Exports', ...(isSuperAdmin ? ['Audit Trail'] : [])];
   const { data, loading, error, reload } = useFetch(async () => {
     const [stats, bookings, payments, editors, services] = await Promise.all([
       adminApi.stats(),
@@ -108,9 +108,9 @@ export default function AdminDashboard() {
             {tabs.map((item) => (
               <button key={item} onClick={() => setTab(item)} className={`border-b-2 px-4 pb-3 text-sm font-medium transition ${tab === item ? 'border-violet-400 text-white' : 'border-transparent text-slate-600 hover:text-slate-300'}`}>
                 {item}
-                {['Projects', 'Editors', 'Payments'].includes(item) && (
+                {['Projects', 'Nerds', 'Payments'].includes(item) && (
                   <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px]">
-                    {item === 'Projects' ? data.bookings.length : item === 'Editors' ? data.editors.length : data.payments.length}
+                    {item === 'Projects' ? data.bookings.length : item === 'Nerds' ? data.editors.length : data.payments.length}
                   </span>
                 )}
               </button>
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
             {tab === 'Analytics' && <AdminInsightsPanel />}
             {tab === 'Workload' && <WorkloadPanel editors={data.editors} services={data.services} />}
             {tab === 'Leads' && <LeadsPanel services={data.services} />}
-            {tab === 'Editors' && <EditorsTable items={data.editors} busy={busy} action={action} />}
+            {tab === 'Nerds' && <EditorsTable items={data.editors} busy={busy} action={action} />}
             {tab === 'Exports' && <ExportPanel isSuperAdmin={isSuperAdmin} bookings={data.bookings} payments={data.payments} />}
             {tab === 'Audit Trail' && <AuditPanel />}
           </div>
@@ -295,7 +295,7 @@ function FinancialControls({ booking, busy, action }) {
     <div className="min-w-64 space-y-2">
       <div className="flex flex-wrap gap-2"><StatusBadge status={value.job_type === 'internal' ? 'assigned' : 'pending'} /><StatusBadge status={value.editor_payout_status === 'paid' ? 'paid' : value.editor_payout_status} /></div>
       <select className="input !py-2 text-xs" value={value.job_type} onChange={(event) => update('job_type', event.target.value)}><option value="internal">Internal</option><option value="external">External</option></select>
-      <input className="input !py-2 text-xs" type="number" min="0" step="1" placeholder="Editor payout (INR)" value={value.editor_payout_amount} onChange={(event) => update('editor_payout_amount', event.target.value)} />
+      <input className="input !py-2 text-xs" type="number" min="0" step="1" placeholder="Nerd payout (INR)" value={value.editor_payout_amount} onChange={(event) => update('editor_payout_amount', event.target.value)} />
       <select className="input !py-2 text-xs" value={value.editor_payout_status} onChange={(event) => update('editor_payout_status', event.target.value)}>{['not_set', 'pending', 'approved', 'paid'].map((status) => <option key={status} value={status}>{humanize(status)}</option>)}</select>
       <textarea className="input min-h-20 !py-2 text-xs" maxLength={2000} placeholder="Admin-only payout notes" value={value.payout_notes} onChange={(event) => update('payout_notes', event.target.value)} />
       <button disabled={!!busy} onClick={() => action(`financials-${booking.id}`, () => adminApi.updateFinancials(booking.id, { ...value, editor_payout_amount: value.editor_payout_amount === '' ? null : Number(value.editor_payout_amount) }), 'Job tagging and payout updated.')} className="btn-secondary !px-3 !py-2 text-xs">Save payout</button>

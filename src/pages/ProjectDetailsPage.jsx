@@ -142,7 +142,7 @@ export default function ProjectDetailsPage() {
                   <div className="flex justify-between"><dt className="text-slate-600">Created</dt><dd className="text-slate-300">{formatDate(project.created_at)}</dd></div>
                   <div className="flex justify-between"><dt className="text-slate-600">Assigned</dt><dd className="text-slate-300">{formatDate(project.assigned_at)}</dd></div>
                   <div className="flex justify-between"><dt className="text-slate-600">Updated</dt><dd className="text-slate-300">{formatDate(project.updated_at)}</dd></div>
-                  <div className="flex justify-between"><dt className="text-slate-600">Editor</dt><dd className="text-slate-300">{project.editor_name}</dd></div>
+                  <div className="flex justify-between"><dt className="text-slate-600">Nerd</dt><dd className="text-slate-300">{project.editor_name}</dd></div>
                   {project.editor_payout_status && project.editor_payout_status !== 'not_set' && <div className="flex justify-between gap-4"><dt className="text-slate-600">Payout</dt><dd className="text-right text-slate-300">{project.editor_payout_amount ? `₹${Number(project.editor_payout_amount).toLocaleString('en-IN')}` : '-'} · {humanize(project.editor_payout_status)}</dd></div>}
                 </dl>
               </div>
