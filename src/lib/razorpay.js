@@ -20,7 +20,10 @@ function loadCheckoutScript() {
     script.onload = () => window.Razorpay
       ? resolve(window.Razorpay)
       : reject(new Error('Razorpay Checkout did not load.'));
-    script.onerror = () => reject(new Error('Razorpay Checkout could not be loaded.'));
+    script.onerror = () => {
+      checkoutScriptPromise = undefined;
+      reject(new Error('Secure checkout could not be loaded. Check your connection and try again.'));
+    };
     document.head.appendChild(script);
   });
   return checkoutScriptPromise;
@@ -28,8 +31,9 @@ function loadCheckoutScript() {
 
 export async function startRazorpayCheckout({ booking, user }) {
   const requestId = booking.request_id || booking.booking_ref;
-  const order = await paymentsApi.createRazorpayOrder(requestId);
-  const key = runtimeConfig.razorpayKeyId || order.key_id;
+  const trackingToken = booking.tracking_token || booking.trackingToken;
+  const order = await paymentsApi.createRazorpayOrder(requestId, trackingToken);
+  const key = order.key_id || runtimeConfig.razorpayKeyId;
   if (!key) throw new Error('Razorpay is not configured for this site.');
   const Razorpay = await loadCheckoutScript();
 
@@ -48,15 +52,17 @@ export async function startRazorpayCheckout({ booking, user }) {
       name: 'NerdyFren.com',
       description: booking.service_name || 'Creator editing service',
       prefill: {
-        name: booking.customer_name || user?.name || '',
-        email: booking.customer_email || user?.email || '',
-        contact: booking.customer_phone || user?.mobile || '',
+        name: order.prefill?.name || booking.customer_name || user?.name || '',
+        email: order.prefill?.email || booking.customer_email || user?.email || '',
+        contact: order.prefill?.contact || booking.customer_phone || user?.mobile || '',
       },
       notes: { request_id: requestId },
       theme: { color: '#F2A93B' },
       handler: async (response) => {
         try {
           const verified = await paymentsApi.verifyRazorpay({
+            requestId,
+            ...(trackingToken ? { tracking_token: trackingToken } : {}),
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
             razorpay_signature: response.razorpay_signature,

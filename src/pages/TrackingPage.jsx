@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Check,
   Circle,
+  CreditCard,
   ExternalLink,
   LoaderCircle,
   MessageCircle,
@@ -11,12 +12,13 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
 import useAuth from '../hooks/useAuth';
-import { bookingsApi, clientApi, getApiError } from '../lib/api';
+import { bookingsApi, clientApi, getApiError, paymentsApi } from '../lib/api';
+import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
 import {
   formatDate,
   formatDateTime,
@@ -81,8 +83,9 @@ function getJourneyIndex(booking) {
 }
 
 export default function TrackingPage() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const requestedIdentifier = params.get('requestId') || params.get('id') || params.get('request_id') || params.get('token');
   const [identifier, setIdentifier] = useState(requestedIdentifier || '');
   const [booking, setBooking] = useState(null);
@@ -101,12 +104,20 @@ export default function TrackingPage() {
     if (privateLookup) setPrivateToken(privateLookup);
     const result = await bookingsApi.track(privateLookup || lookup);
     const requestId = result.request_id || result.booking_ref;
-    setBooking(result);
+    const payment = requestId
+      ? await paymentsApi.status(requestId, privateLookup).catch(() => null)
+      : null;
+    const hydrated = payment ? {
+      ...result,
+      payment_display_status: payment.payment_status,
+      payable: payment.payable,
+    } : result;
+    setBooking(hydrated);
     setIdentifier(requestId || lookup);
     autoLoadedRef.current = requestId || lookup;
     if (updateUrl && requestId) setParams({ requestId });
     if (requestId) trackEvent('track_request_opened', {}, { requestId });
-    return result;
+    return hydrated;
   }, [setParams]);
 
   useEffect(() => {
@@ -184,6 +195,29 @@ export default function TrackingPage() {
     }
   };
 
+  const pay = async () => {
+    setAction('payment');
+    setActionError('');
+    setNotice('Opening secure Razorpay Checkout...');
+    try {
+      const paid = await startRazorpayCheckout({
+        booking: { ...booking, tracking_token: privateToken || undefined },
+        user,
+      });
+      navigate(`/booking/success?requestId=${encodeURIComponent(requestId)}&payment=success`, {
+        state: { ...booking, ...paid, payment_status: 'paid', tracking_token: privateToken || undefined },
+      });
+    } catch (requestError) {
+      setNotice('');
+      setActionError(requestError instanceof PaymentCancelledError
+        ? 'Payment was not completed. Try again or contact WhatsApp support.'
+        : getApiError(requestError, 'Payment was not completed. Try again or contact WhatsApp support.'));
+      await loadBooking(requestId).catch(() => {});
+    } finally {
+      setAction('');
+    }
+  };
+
   const delivery = booking?.delivery || (
     booking?.delivery_link
       ? {
@@ -253,13 +287,22 @@ export default function TrackingPage() {
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Request ID</p><p className="mt-2 break-all font-mono text-sm font-semibold">{requestId}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Service</p><p className="mt-2 font-semibold">{serviceMeta[booking.service_type]?.name || humanize(booking.service_type)}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Status</p><div className="mt-2"><StatusBadge status={booking.status} /></div></div>
-                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_status || 'pending'} /></div></div>
+                <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Payment</p><div className="mt-2"><StatusBadge status={booking.payment_display_status || booking.payment_status || 'pending'} /></div><p className="mt-2 text-xs text-slate-500">{{ pending: 'Pending Payment', under_verification: 'Payment Under Verification', paid: 'Paid', failed: 'Failed' }[booking.payment_display_status || booking.payment_status] || 'Pending Payment'}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Created Date</p><p className="mt-2 font-semibold">{formatDate(booking.created_at)}</p></div>
                 <div className="rounded-xl bg-white/[0.03] p-4"><p className="text-xs text-slate-600">Latest update</p><p className="mt-2 font-semibold">{booking.latest_update || humanize(booking.status)}</p></div>
               </div>
 
               {notice && <div className="mx-6 mb-6 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">{notice}</div>}
               {actionError && <div className="mx-6 mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-300">{actionError}</div>}
+              {booking.payable && booking.status !== 'cancelled' && (
+                <div className="mx-6 mb-6 flex flex-col gap-3 rounded-xl border border-amber-400/20 bg-amber-500/[0.08] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div><p className="font-semibold text-amber-100">Payment is still pending.</p><p className="mt-1 text-sm text-slate-400">Complete secure checkout to move this request forward.</p></div>
+                  <button disabled={action === 'payment'} onClick={pay} className="btn-primary shrink-0">
+                    {action === 'payment' ? <LoaderCircle className="animate-spin" size={16} /> : <CreditCard size={16} />}
+                    Pay securely with Razorpay
+                  </button>
+                </div>
+              )}
               {booking.status === 'cancelled' && (
                 <div className="mx-6 mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
                   <p className="font-semibold">This request has been cancelled.</p>

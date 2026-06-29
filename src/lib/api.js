@@ -21,8 +21,9 @@ export const API_ENDPOINTS = Object.freeze({
   userBooking: (id) => `${API_PREFIX}/user/bookings/${id}`,
   userBookingRevision: (id) => `${API_PREFIX}/user/bookings/${id}/revision`,
   paymentNotify: `${API_PREFIX}/payments/notify`,
-  razorpayCreateOrder: `${API_PREFIX}/payments/razorpay/create-order`,
+  razorpayCreateOrder: `${API_PREFIX}/payments/razorpay/order`,
   razorpayVerify: `${API_PREFIX}/payments/razorpay/verify`,
+  paymentStatus: (requestId) => `${API_PREFIX}/payments/status/${encodeURIComponent(requestId)}`,
   analyticsEvent: `${API_PREFIX}/analytics/event`,
   clientApprove: `${API_PREFIX}/client/approve`,
   clientRevision: `${API_PREFIX}/client/revision`,
@@ -207,14 +208,18 @@ export const bookingsApi = {
 
 export const paymentsApi = {
   notify: (data) => api.post(API_ENDPOINTS.paymentNotify, data).then((r) => expectObject(r.data, 'payment notification')),
-  createRazorpayOrder: (requestId) => api.post(
+  createRazorpayOrder: (requestId, trackingToken) => api.post(
     API_ENDPOINTS.razorpayCreateOrder,
-    { request_id: requestId },
+    { requestId, ...(trackingToken ? { tracking_token: trackingToken } : {}) },
   ).then((r) => expectObject(r.data, 'Razorpay order')),
   verifyRazorpay: (data) => api.post(
     API_ENDPOINTS.razorpayVerify,
     data,
   ).then((r) => expectObject(r.data, 'Razorpay verification')),
+  status: (requestId, trackingToken) => api.get(
+    API_ENDPOINTS.paymentStatus(requestId),
+    { params: trackingToken ? { tracking_token: trackingToken } : undefined },
+  ).then((r) => expectObject(r.data, 'payment status')),
 };
 
 export const analyticsApi = {

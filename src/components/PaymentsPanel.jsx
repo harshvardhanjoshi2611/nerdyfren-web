@@ -15,7 +15,7 @@ function paymentRows(bookings) {
     razorpay_order_id: booking.razorpay_order_id || '',
     razorpay_payment_id: booking.razorpay_payment_id || '',
     payment_method: booking.payment_method || '',
-    verification_status: booking.payment_verified_at ? 'verified' : 'not_verified',
+    verification_status: booking.razorpay_signature_verified ? 'verified' : 'not_verified',
     base_amount: pricing.base_amount,
     gst_rate: pricing.gst_rate,
     gst_amount: pricing.gst_amount,
@@ -26,7 +26,7 @@ function paymentRows(bookings) {
       ? (booking.payment_amount ?? pricing.total_amount) - (booking.editor_payout_amount || 0)
       : '',
     status: booking.payment_status,
-    payment_date: booking.payment_date || '',
+    payment_date: booking.razorpay_paid_at || booking.payment_date || '',
     booking_date: booking.created_at,
     });
   });
@@ -123,8 +123,8 @@ export default function PaymentsPanel({ pending, bookings, busy, action }) {
                   <td className="max-w-56 break-all px-5 py-4 font-mono text-xs text-cyan-300">{booking.razorpay_payment_id || '-'}</td>
                   <td className="px-5 py-4"><p>{formatMoney(booking.payment_amount ?? pricing.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Base {formatMoney(pricing.base_amount)} · GST {formatMoney(pricing.gst_amount)}</p></td>
                   <td className="px-5 py-4"><StatusBadge status={booking.payment_status} /></td>
-                  <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_verified_at ? `Verified${booking.payment_method ? ` via ${booking.payment_method}` : ''}` : 'Not verified'}</td>
-                  <td className="px-5 py-4 text-xs text-slate-400">{booking.payment_date ? formatDateTime(booking.payment_date) : humanize(booking.payment_status)}</td>
+                  <td className="px-5 py-4 text-xs text-slate-400">{booking.razorpay_order_id ? (booking.razorpay_signature_verified ? `Yes${booking.payment_method ? ` · ${booking.payment_method}` : ''}` : 'No') : (booking.payment_verified_at ? 'Manual / offline' : 'No')}</td>
+                  <td className="px-5 py-4 text-xs text-slate-400">{booking.razorpay_paid_at || booking.payment_date ? formatDateTime(booking.razorpay_paid_at || booking.payment_date) : humanize(booking.razorpay_attempt_status || booking.payment_status)}</td>
                 </tr>
               );})}
               {!bookings.length && <tr><td colSpan="9" className="px-5 py-14 text-center text-slate-600">No payment records yet.</td></tr>}

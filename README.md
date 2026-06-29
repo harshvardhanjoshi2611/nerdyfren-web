@@ -43,6 +43,7 @@ Set the local public configuration in `.env`:
 ```env
 VITE_API_URL=http://localhost:3001
 VITE_WHATSAPP_NUMBER=COUNTRY_CODE_AND_NUMBER
+# Optional fallback; the API normally returns the public key ID per order.
 VITE_RAZORPAY_KEY_ID=rzp_test_or_live_key_id
 VITE_SITE_URL=http://localhost:5173
 VITE_SUPPORT_EMAIL=support@your-domain.example
@@ -152,13 +153,13 @@ uses bearer tokens, browser storage remains sensitive to cross-site scripting;
 keep the script and CMS surface narrow and move to secure, HTTP-only cookies if
 server-managed sessions are introduced.
 
-The frontend never sends service prices or payment claims during booking creation. The backend calculates the service base price plus 18% GST, creates the Razorpay order for that final total, and verifies the checkout or webhook signature before marking a booking paid.
+The frontend never sends service prices or payment claims during booking creation. The backend calculates the service base price plus 18% GST, creates the Razorpay order for that final total, and verifies the checkout or webhook signature plus the provider-side order, amount, currency, and payment status before marking a booking paid. Guest bookings use the private tracking token returned with the Request ID.
 
 Operational routes use the same white/ink/amber system as the approved public site. The Admin Analytics tab displays privacy-minimized 7-day and 30-day event summaries plus notification delivery logs. Analytics failures are intentionally silent and require no frontend secret.
 
 `VITE_API_URL` is the backend origin. The centralized client appends `/api/v1` to every endpoint. For backward compatibility, a value that already ends in `/api/v1` is normalized and also works.
 
-`VITE_RAZORPAY_KEY_ID` is a public checkout key. Never add `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` to the frontend or Vercel environment.
+`VITE_RAZORPAY_KEY_ID` is an optional public checkout-key fallback; the preferred path uses `key_id` from the backend order response. Never add `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` to the frontend or Vercel environment.
 
 ## Folder Structure
 

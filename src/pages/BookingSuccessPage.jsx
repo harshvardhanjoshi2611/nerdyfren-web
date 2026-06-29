@@ -1,10 +1,13 @@
-import { ArrowRight, CheckCircle2, MessageCircle, ReceiptIndianRupee } from 'lucide-react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, CreditCard, LoaderCircle, MessageCircle, ReceiptIndianRupee } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import useAuth from '../hooks/useAuth';
 import useSiteContent from '../hooks/useSiteContent';
 import { buildCoordinatorMessage, buildWhatsAppLink } from '../lib/contactConfig';
 import { formatMoney, getPriceBreakdown, serviceMeta } from '../lib/format';
+import { getApiError, paymentsApi } from '../lib/api';
+import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
 
 function recentBooking() {
   try {
@@ -16,12 +19,23 @@ function recentBooking() {
 
 export default function BookingSuccessPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const { user } = useAuth();
   const { content } = useSiteContent();
   const storedBooking = location.state || recentBooking();
   const requestId = params.get('requestId') || storedBooking?.request_id || storedBooking?.booking_ref || '';
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const booking = storedBooking || (requestId ? { request_id: requestId } : null);
+
+  useEffect(() => {
+    if (!requestId) return;
+    paymentsApi.status(requestId, storedBooking?.tracking_token)
+      .then(setPaymentStatus)
+      .catch(() => {});
+  }, [requestId, storedBooking?.tracking_token]);
   const serviceName = booking?.service_name
     || serviceMeta[booking?.service_type]?.name
     || booking?.service_type;
@@ -50,9 +64,30 @@ export default function BookingSuccessPage() {
   }
 
   const paymentState = params.get('payment') || booking.payment_state || booking.payment_status;
-  const paid = booking.payment_status === 'paid' && paymentState === 'success';
+  const paid = paymentStatus?.payment_status === 'paid'
+    || (booking.payment_status === 'paid' && paymentState === 'success');
   const cancelled = paymentState === 'cancelled';
   const pricing = getPriceBreakdown(booking);
+  const retryPayment = async () => {
+    setPaymentBusy(true);
+    setPaymentError('');
+    try {
+      const verified = await startRazorpayCheckout({ booking, user });
+      const paidBooking = { ...booking, ...verified, payment_status: 'paid' };
+      sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(paidBooking));
+      setPaymentStatus({ payment_status: 'paid', payable: false });
+      navigate(`/booking/success?requestId=${encodeURIComponent(requestId)}&payment=success`, {
+        replace: true,
+        state: paidBooking,
+      });
+    } catch (requestError) {
+      setPaymentError(requestError instanceof PaymentCancelledError
+        ? 'Payment was not completed. Try again or contact WhatsApp support.'
+        : getApiError(requestError, 'Payment was not completed. Try again or contact WhatsApp support.'));
+    } finally {
+      setPaymentBusy(false);
+    }
+  };
   return (
     <main className="nf-public nf-success-page">
       <div className="nf-success-card">
@@ -77,7 +112,15 @@ export default function BookingSuccessPage() {
           <div><dt>Payment status</dt><dd>{paid ? 'Paid' : 'Payment Pending'}</dd></div>
         </dl>
 
+        {paymentError && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{paymentError}</p>}
+
         <div className="nf-success-actions">
+          {!paid && (paymentStatus?.payable || booking.tracking_token) && (
+            <button disabled={paymentBusy} onClick={retryPayment} className="nf-button-primary">
+              {paymentBusy ? <LoaderCircle className="animate-spin" size={17} /> : <CreditCard size={17} />}
+              Pay securely with Razorpay
+            </button>
+          )}
           <Link to={`/track?requestId=${encodeURIComponent(requestId)}`} className="nf-button-primary">Track Project <ArrowRight size={17} /></Link>
           <Link to="/booking" className="nf-booking-secondary">Book another edit</Link>
           <Link to="/" className="nf-booking-secondary">Go to home</Link>
