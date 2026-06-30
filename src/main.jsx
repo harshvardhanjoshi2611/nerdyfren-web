@@ -6,6 +6,7 @@ import AppErrorBoundary from './components/AppErrorBoundary';
 import ConfigurationError from './components/ConfigurationError';
 import { AuthProvider } from './context/AuthContext';
 import { SiteContentProvider } from './context/SiteContentContext';
+import { CartProvider } from './context/CartContext';
 import './styles/index.css';
 import { runtimeConfig } from './lib/runtimeConfig';
 
@@ -14,11 +15,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AppErrorBoundary>
         <AuthProvider>
-          <SiteContentProvider>
-            {runtimeConfig.configurationError
-              ? <ConfigurationError message={runtimeConfig.configurationError} />
-              : <App />}
-          </SiteContentProvider>
+          <CartProvider>
+            <SiteContentProvider>
+              {runtimeConfig.configurationError
+                ? <ConfigurationError message={runtimeConfig.configurationError} />
+                : <App />}
+            </SiteContentProvider>
+          </CartProvider>
         </AuthProvider>
       </AppErrorBoundary>
     </BrowserRouter>

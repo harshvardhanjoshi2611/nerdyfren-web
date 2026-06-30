@@ -18,6 +18,7 @@ import PasswordRecoveryPage from './pages/PasswordRecoveryPage';
 import LegalPage from './pages/LegalPage';
 import Seo from './components/Seo';
 import AnalyticsTracker from './components/AnalyticsTracker';
+import CartDrawer from './components/CartDrawer';
 
 export default function App() {
   return (
@@ -78,6 +79,7 @@ export default function App() {
       <Route path="/superadmin/dashboard" element={<Navigate to="/dashboard/super-admin" replace />} />
       <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <CartDrawer />
       <FloatingWhatsApp />
     </>
   );

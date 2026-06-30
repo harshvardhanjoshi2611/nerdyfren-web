@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Clock3, Layers3, LoaderCircle } from 'lucide-react';
+import { ArrowRight, Check, Clock3, Layers3, LoaderCircle, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
@@ -7,6 +7,8 @@ import { useFetch } from '../hooks/useFetch';
 import useSiteContent from '../hooks/useSiteContent';
 import { servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, serviceMeta } from '../lib/format';
+import { createCartItem } from '../lib/cart';
+import useCart from '../hooks/useCart';
 
 export default function ServicesPage() {
   const {
@@ -16,6 +18,7 @@ export default function ServicesPage() {
     reload,
   } = useFetch(servicesApi.list, []);
   const { content } = useSiteContent();
+  const { addItem } = useCart();
   const cards = Array.isArray(services) ? services : fallbackServices;
   const servicesVisual = content.homepage?.visuals || {};
   return (
@@ -60,7 +63,12 @@ export default function ServicesPage() {
                   </div>
                   {comingSoon
                     ? <button disabled className="btn-secondary mt-7 w-full cursor-not-allowed opacity-60">Booking opens soon</button>
-                    : <Link to={`/booking?service=${service.id}`} className="btn-secondary mt-7 w-full group-hover:border-violet-400/30 group-hover:text-white">Book this service <ArrowRight size={16} /></Link>}
+                    : (
+                      <div className="mt-7 grid gap-2 sm:grid-cols-2">
+                        <button type="button" onClick={() => addItem(createCartItem({ ...service, name: service.name || meta.name }))} className="btn-primary"><ShoppingBag size={16} /> Add to Cart</button>
+                        <Link to={`/booking?service=${service.id}`} className="btn-secondary group-hover:border-violet-400/30 group-hover:text-white">Book now <ArrowRight size={16} /></Link>
+                      </div>
+                    )}
                 </article>
               );
             })}

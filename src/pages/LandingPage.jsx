@@ -17,6 +17,11 @@ import Navbar from '../components/Navbar';
 import useSiteContent from '../hooks/useSiteContent';
 import { buildWhatsAppLink } from '../lib/contactConfig';
 import { trackEvent } from '../lib/analytics';
+import { useFetch } from '../hooks/useFetch';
+import { servicesApi } from '../lib/api';
+import { fallbackServices, formatMoney } from '../lib/format';
+import { createCartItem } from '../lib/cart';
+import useCart from '../hooks/useCart';
 
 const services = [
   {
@@ -25,7 +30,6 @@ const services = [
     tag: 'Trend Hopper',
     description: 'Quick-turnaround trend-based reel edit for creators who want to jump on what is currently working.',
     bullets: ['Trend-style cut', 'Hook + pacing optimized', 'Captions / beat sync included', 'Fast delivery'],
-    price: 'Starting ₹1,000',
     icon: TrendingUp,
   },
   {
@@ -34,7 +38,6 @@ const services = [
     tag: 'Reels & Shorts / Short Reel',
     description: 'Under 90 seconds, cut for the scroll. Fast, clean, effective.',
     bullets: ['Under 90 seconds', 'Max 2 revisions', 'Upload files or share links', 'Audio & edit references'],
-    price: '₹2,500',
     icon: Smartphone,
   },
   {
@@ -43,7 +46,6 @@ const services = [
     tag: 'Reel + Text',
     description: 'Up to 1 minute with punchy on-screen copy that keeps them watching.',
     bullets: ['Up to 1 minute', 'Copy & text overlay included', 'Max 2 revisions', 'Upload files or share links'],
-    price: '₹3,000',
     icon: Captions,
     popular: true,
   },
@@ -53,7 +55,6 @@ const services = [
     tag: 'Podcast / Full Package',
     description: 'Full episode edit + 1 reel. The complete podcast drop, handled.',
     bullets: ['Up to 45 min episode edit', '1 promotional reel', 'Precap included', 'Basic animation'],
-    price: '₹5,000',
     icon: Music2,
   },
 ];
@@ -83,6 +84,8 @@ function getCmsSocialUrl(content, platform) {
 
 export default function LandingPage() {
   const { content } = useSiteContent();
+  const { data: liveServices } = useFetch(servicesApi.list, []);
+  const { addItem } = useCart();
   const whatsappHref = getCmsSocialUrl(content, 'whatsapp')
     || buildWhatsAppLink('Hi NerdyFren, I am not sure which editing package is right for me.');
 
@@ -130,7 +133,13 @@ export default function LandingPage() {
             <p>Pick your package, send the footage, get back the final cut.</p>
           </div>
           <div className="nf-container nf-service-grid">
-            {services.map(({ id, name, tag, description, bullets, price, icon: Icon, popular }) => (
+            {services.map(({ id, name, tag, description, bullets, icon: Icon, popular }) => {
+              const fallback = fallbackServices.find((service) => service.id === id);
+              const live = Array.isArray(liveServices)
+                ? liveServices.find((service) => service.id === id)
+                : null;
+              const catalogService = { ...fallback, ...live, id, name };
+              return (
               <article key={id} className={`nf-service-card ${popular ? 'is-featured' : ''}`}>
                 {popular && <span className="nf-service-badge">Most Popular</span>}
                 <div className="nf-service-icon"><Icon size={27} strokeWidth={1.8} /></div>
@@ -141,11 +150,15 @@ export default function LandingPage() {
                   {bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
                 </ul>
                 <div className="nf-service-foot">
-                  <p className="nf-service-price">{price}<span>one-time · INR</span></p>
-                  <Link to={`/booking?service=${id}`} onClick={() => trackEvent('book_editor_click', { location: 'service_card', service: id })} className="nf-button-small">Book Now</Link>
+                  <p className="nf-service-price">{formatMoney(catalogService.amount)}<span>one-time · INR</span></p>
+                  <div className="nf-service-actions">
+                    <button type="button" onClick={() => addItem(createCartItem(catalogService))} className="nf-button-cart">Add to Cart</button>
+                    <Link to={`/booking?service=${id}`} onClick={() => trackEvent('book_editor_click', { location: 'service_card', service: id })} className="nf-button-small">Book Now</Link>
+                  </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
 

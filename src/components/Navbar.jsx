@@ -1,4 +1,4 @@
-import { LogOut, Menu, MessageCircle, X } from 'lucide-react';
+import { LogOut, Menu, MessageCircle, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -6,6 +6,7 @@ import useSiteContent from '../hooks/useSiteContent';
 import { buildWhatsAppLink } from '../lib/contactConfig';
 import { getRolePath } from '../lib/roleNavigation';
 import Logo from './Logo';
+import useCart from '../hooks/useCart';
 
 function getCmsWhatsApp(content) {
   return (content.social_links || []).find((item) => (
@@ -20,6 +21,7 @@ export default function Navbar() {
   const { content } = useSiteContent();
   const dashboardPath = getRolePath(activeRole);
   const whatsappHref = getCmsWhatsApp(content);
+  const { itemCount, openCart } = useCart();
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -38,6 +40,11 @@ export default function Navbar() {
             <a href="/#process">How it works</a>
           </nav>
           <div className="nf-navbar-actions">
+            <button type="button" onClick={openCart} className="nf-cart-trigger" aria-label={`Open cart with ${itemCount} item${itemCount === 1 ? '' : 's'}`}>
+              <ShoppingBag size={18} />
+              <span>Cart</span>
+              {itemCount > 0 && <strong>{itemCount}</strong>}
+            </button>
             <a href="/#services" className="nf-nav-cta">Get Started</a>
             {isAuthenticated ? (
               <>
