@@ -145,6 +145,7 @@ export function getApiError(error, fallback = 'Something went wrong. Please try 
     INVALID_STATUS_TRANSITION: 'This project is not ready for that action.',
     LEAD_NOT_FOUND: 'That lead could not be found.',
     MISSING_BRIEF: 'Add a project brief before continuing.',
+    MOBILE_EXISTS: 'That mobile number is already linked to another account.',
     NOT_ASSIGNED: 'Assign this project before continuing.',
     PAYMENT_ALREADY_VERIFIED: 'This payment has already been verified.',
     PAYMENT_ORDER_NOT_FOUND: 'That payment session is no longer available. Please try again.',

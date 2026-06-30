@@ -16,6 +16,7 @@ import { authApi, bookingsApi, getApiError, servicesApi } from '../lib/api';
 import { fallbackServices, formatMoney, getPriceBreakdown, serviceMeta } from '../lib/format';
 import { PaymentCancelledError, startRazorpayCheckout } from '../lib/razorpay';
 import { trackEvent } from '../lib/analytics';
+import { isValidMobile, normalizeMobile } from '../lib/mobile';
 
 const steps = ['Choose service', 'Submit brief', 'Review & pay'];
 const supportedServices = ['trend-hopper', 'video-reel', 'video-copy', 'podcast'];
@@ -44,8 +45,8 @@ function validateBrief(form) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.client_email.trim())) {
     return 'Please enter an email address we can use for project updates.';
   }
-  if (form.client_phone.replace(/\D/g, '').length < 7) {
-    return 'Please enter a valid WhatsApp number.';
+  if (!isValidMobile(form.client_phone)) {
+    return 'Enter a valid WhatsApp number with 7 to 15 digits.';
   }
   if (form.projectGoal.trim().length < 3) return 'Tell us a little about what you would like us to create.';
   if (![form.rawFootageUrl, form.referenceEditUrl].every(isWebUrl)) {
@@ -169,10 +170,11 @@ export default function BookingPage() {
     let context = bookingContext;
     try {
       if (!context) {
+        const normalizedPhone = normalizeMobile(form.client_phone);
         const booking = await bookingsApi.create({
           client_name: form.client_name.trim(),
           client_email: form.client_email.trim(),
-          client_phone: form.client_phone.trim(),
+          client_phone: normalizedPhone,
           service_type: form.service_type,
           brief: buildBrief(form),
           ref_links: [
@@ -188,16 +190,18 @@ export default function BookingPage() {
           ...booking,
           customer_name: form.client_name.trim(),
           customer_email: form.client_email.trim(),
-          customer_phone: form.client_phone.trim(),
+          customer_phone: normalizedPhone,
           service_name: selected.name,
           brief: buildBrief(form),
         };
         setBookingContext(context);
         sessionStorage.setItem('nerdyfren_last_booking', JSON.stringify(context));
         if (user) {
-          authApi.me()
-            .then(startSession)
-            .catch(() => {});
+          try {
+            startSession(await authApi.me());
+          } catch {
+            // The booking is already saved; a later session refresh will retry profile hydration.
+          }
         }
         trackEvent('booking_submitted', { service: form.service_type }, { requestId: booking.request_id });
       }

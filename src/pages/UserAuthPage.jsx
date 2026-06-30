@@ -6,6 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { authApi, getApiError } from '../lib/api';
 import { getRolePath, roleWorkspaces } from '../lib/roleNavigation';
 import { trackEvent } from '../lib/analytics';
+import { isValidMobile, normalizeMobile } from '../lib/mobile';
 
 export default function UserAuthPage({ mode, preferredRole = null }) {
   const isSignup = mode === 'signup';
@@ -19,11 +20,19 @@ export default function UserAuthPage({ mode, preferredRole = null }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (contactType === 'mobile' && !isValidMobile(form.identifier)) {
+      setError('Enter a valid mobile number with 7 to 15 digits.');
+      return;
+    }
     trackEvent(isSignup ? 'signup_started' : 'login_started', { method: contactType });
     setLoading(true);
     setError('');
     try {
-      const contact = { [contactType]: form.identifier.trim() };
+      const contact = {
+        [contactType]: contactType === 'mobile'
+          ? normalizeMobile(form.identifier)
+          : form.identifier.trim(),
+      };
       const result = isSignup
         ? await authApi.signup({ name: form.name, password: form.password, ...contact })
         : await authApi.login({
